@@ -1,0 +1,98 @@
+name: Tests
+on: [push]
+permissions: {}
+
+jobs:
+  test-build-native:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            target_os: macos
+            runner: macos-12
+          - arch: aarch64
+            target_os: macos
+            runner: macos-12
+          - arch: aarch64
+            target_os: ios
+            runner: macos-12
+          - arch: aarch64
+            target_os: tvos
+            runner: macos-12
+          - arch: x86_64
+            target_os: windows
+            runner: windows-2022
+    uses: ./.github/workflows/test_build_native.yml
+    with:
+      arch: ${{ matrix.arch }}
+      target_os: ${{ matrix.target_os }}
+      runner: ${{ matrix.runner }}
+
+  test-build-docker:
+    permissions:
+      contents: read
+      packages: read
+    strategy:
+      matrix:
+        include:
+          - arch: x86_64
+            target_os: linux
+          - arch: i686
+            target_os: linux
+          - arch: aarch64
+            target_os: linux
+          - arch: armv7
+            target_os: linux
+          - arch: armv5
+            target_os: linux
+          - arch: x86_64
+            target_os: android
+          - arch: i686
+            target_os: android
+          - arch: aarch64
+            target_os: android
+          - arch: armv7
+            target_os: android
+    uses: ./.github/workflows/test_build_docker.yml
+    secrets: inherit
+    with:
+      arch: ${{ matrix.arch }}
+      target_os: ${{ matrix.target_os }}
+
+  test-darwin-artefacts:
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        debug: ['--debug', '']
+    runs-on: macos-12
+    needs: test-build-native
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-macos-x86_64${{ matrix.debug }}
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-macos-aarch64${{ matrix.debug }}
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-ios-aarch64${{ matrix.debug }}
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-tvos-aarch64${{ matrix.debug }}
+          path: rust_sample/dist
+      - run: ls -la rust_sample/dist
+      - run: python3 rust_sample/ci/build_sample.py lipo ${{ matrix.debug }}
+      - run: python3 rust_sample/ci/build_sample.py build-ios-simulator-stubs ${{ matrix.debug }}
+      - run: python3 rust_sample/ci/build_sample.py build-tvos-simulator-stubs ${{ matrix.debug }}
+      - run: python3 rust_sample/ci/build_sample.py xcframework ${{ matrix.debug }}
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: rust-sample-xcframework
+          path: rust_sample/dist/darwin/*.xcframework

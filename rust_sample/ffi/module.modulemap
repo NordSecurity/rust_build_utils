@@ -1,0 +1,4 @@
+module RustSample {
+  umbrella "."
+  export *
+}
