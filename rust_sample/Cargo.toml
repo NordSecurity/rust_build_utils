@@ -13,6 +13,8 @@ name = "example_binary"
 path = "src/main.rs"
 
 [dependencies]
+[target.'cfg(target_os = "android")'.dependencies]
+jni = { version = "0.17.0", default-features = false }
 
 [workspace]
 members = ["crates/*"]

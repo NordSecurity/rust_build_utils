@@ -1,4 +1,5 @@
 from pathlib import Path
+import os
 import sys
 
 PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
@@ -8,6 +9,7 @@ sys.path += [f"{PROJECT_ROOT}/.."]
 import rust_build_utils.rust_utils as rutils
 from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 import rust_build_utils.darwin_build_utils as dbu
+import rust_build_utils.android_build_utils as abu
 
 
 PROJECT_CONFIG = rutils.Project(
@@ -128,11 +130,28 @@ SAMPLE_CONFIG = {
         "packages": {
             "rust_sample": {
                 "example_binary": "example_binary",
+                "rust_sample": "librust_sample.so",
             },
         },
         "pre_build": [pre_function],
+        "binding_src": f"ffi/java",
+        "binding_dest": f"dist/android/",
     },
 }
+
+
+def copy_bindings(config):
+    if "binding_src" in SAMPLE_CONFIG[config.target_os]:
+        bindings = f"{PROJECT_CONFIG.root_dir}/{SAMPLE_CONFIG[config.target_os]['binding_src']}"
+        binding_destination = (
+            f"{PROJECT_CONFIG.root_dir}/{SAMPLE_CONFIG[config.target_os]['binding_dest']}"
+            + bindings.split("/")[-1]
+        )
+
+        if os.path.exists(binding_destination):
+            rutils.remove_tree_or_file(binding_destination)
+
+        rutils.copy_tree_or_file(bindings, binding_destination)
 
 
 def main() -> None:
@@ -151,6 +170,8 @@ def main() -> None:
         dbu.create_xcframework(
             PROJECT_CONFIG, args.debug, "RustSample", headers, "librust_sample.a"
         )
+    elif args.command == "aar":
+        abu.generate_aar(PROJECT_CONFIG, args)
     elif args.command == "build-ios-simulator-stubs":
         dbu.build_stub_ios_simulator_libraries(
             PROJECT_CONFIG,
@@ -221,6 +242,8 @@ def call_build(config):
         packages,
         SAMPLE_CONFIG[config.target_os].get("build_args", None),
     )
+
+    copy_bindings(config)
 
     if "post_build" in SAMPLE_CONFIG[config.target_os]:
         for post in SAMPLE_CONFIG[config.target_os]["post_build"]:

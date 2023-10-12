@@ -12,14 +12,14 @@ on:
         - build-linux-rust
         - build-windows-rust
         - package-aar
-      rust_version:
-        type: string
-        required: true
-        description: Version of Rust base image
       version:
         type: string
         required: true
         description: Output Docker image version
+      rust_version:
+        type: string
+        required: false
+        description: Version of Rust base image for builder images
 
 env:
   REGISTRY: ghcr.io
@@ -51,4 +51,4 @@ jobs:
         context: .
         file: builders/${{ inputs.name }}/Dockerfile
         push: true
-        tags: ${{ env.REGISTRY }}/nordsecurity/${{ inputs.name }}-${{ inputs.rust_version }}:${{ inputs.version }}
+        tags: ${{ env.REGISTRY }}/nordsecurity/${{ inputs.name }}${{ inputs.rust_version }}:${{ inputs.version }}

@@ -196,6 +196,31 @@ def create_cli_parser() -> Any:
         "--debug", action="store_true", help="Create .xcframework using debug binaries"
     )
 
+    aar_parser = subparsers.add_parser(
+        "aar",
+        help="Create aar package that includes available platforms and architectures",
+    )
+    aar_parser.add_argument("project_name", type=str, help="Name of the project")
+    aar_parser.add_argument(
+        "package_name",
+        type=str,
+        help="Package name in the bindings eg. 'com.nordsec.telio'",
+    )
+    aar_parser.add_argument("artifact_id", type=str, help="Artifact id on the server")
+    aar_parser.add_argument(
+        "version",
+        type=str,
+        help="Version for the AAR package. Might be e.g. commit hash",
+    )
+    aar_parser.add_argument(
+        "binding_path", type=str, help="Path to the folder containing bindings"
+    )
+    aar_parser.add_argument(
+        "lib_path",
+        type=str,
+        help="Path to dir containing all directories for each arch binary",
+    )
+
     ios_sim_parser = subparsers.add_parser(
         "build-ios-simulator-stubs",
         help="""Build stub libraries for iOS simulator (aarch64 and x86_64) by reading

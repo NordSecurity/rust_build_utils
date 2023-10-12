@@ -61,7 +61,7 @@ jobs:
       arch: ${{ matrix.arch }}
       target_os: ${{ matrix.target_os }}
 
-  test-darwin-artefacts:
+  test-darwin-artifacts:
     permissions:
       contents: read
     strategy:
@@ -87,7 +87,6 @@ jobs:
         with:
           name: rust-sample-tvos-aarch64${{ matrix.debug }}
           path: rust_sample/dist
-      - run: ls -la rust_sample/dist
       - run: python3 rust_sample/ci/build_sample.py lipo ${{ matrix.debug }}
       - run: python3 rust_sample/ci/build_sample.py build-ios-simulator-stubs ${{ matrix.debug }}
       - run: python3 rust_sample/ci/build_sample.py build-tvos-simulator-stubs ${{ matrix.debug }}
@@ -96,3 +95,40 @@ jobs:
         with:
           name: rust-sample-xcframework
           path: rust_sample/dist/darwin/*.xcframework
+
+  test-android-artifacts:
+    permissions:
+      contents: read
+      packages: read
+    runs-on: ubuntu-22.04
+    needs: test-build-docker
+    container:
+      image: 'ghcr.io/nordsecurity/package-aar:v0.0.1'
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-android-x86_64
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-android-i686
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-android-aarch64
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-android-armv7
+          path: rust_sample/dist
+      - run: python3 rust_sample/ci/build_sample.py aar rust_sample com.nordsec.rust_sample rust_sample v1.2.3 $(pwd)/rust_sample/dist/android/java $(pwd)/rust_sample/dist/android/release/stripped
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: rust-sample-aar
+          path: |
+            rust_sample/dist/*.aar
+            rust_sample/dist/android_aar
