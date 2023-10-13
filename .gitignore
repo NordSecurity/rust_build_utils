@@ -1,0 +1,7 @@
+*.pyc
+.mypy_cache
+venv
+
+rust_sample/android_aar
+rust_sample/dist
+rust_sample/target
