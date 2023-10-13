@@ -1,5 +1,12 @@
 FROM openjdk:8-jdk
 
+ARG REVISION
+
+LABEL org.opencontainers.image.source=https://github.com/NordSecurity/rust_build_utils
+LABEL org.opencontainers.image.description="AAR packaging image"
+LABEL org.opencontainers.image.licenses=GPL-3.0
+LABEL org.opencontainers.image.revision=$REVISION
+
 ENV ANDROID_COMPILE_SDK 29
 ENV ANDROID_BUILD_TOOLS 29.0.2
 ENV ANDROID_SDK_TOOLS 4333796

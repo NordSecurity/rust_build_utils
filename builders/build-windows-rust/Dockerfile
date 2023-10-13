@@ -1,5 +1,12 @@
 FROM rust:1.72.1
 
+ARG REVISION
+
+LABEL org.opencontainers.image.source=https://github.com/NordSecurity/rust_build_utils
+LABEL org.opencontainers.image.description="Windows Rust builder image"
+LABEL org.opencontainers.image.licenses=GPL-3.0
+LABEL org.opencontainers.image.revision=$REVISION
+
 # Download crates.io index - entire index won't have to be downloaded for each job
 RUN cargo search --limit 0
 
