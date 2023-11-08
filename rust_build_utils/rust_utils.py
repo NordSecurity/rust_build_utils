@@ -19,12 +19,16 @@ RUST_NIGHTLY_VERSION = "2023-09-10"
 
 @dataclass
 class CargoConfig:
+    """Arch 'arm64' (eg. the macos arch on arm) will be replaced with 'aarch64'."""
+
     target_os: str
     arch: str
     debug: bool
     rust_target: str = ""
 
     def __post_init__(self):
+        if self.arch == "arm64":
+            self.arch = "aarch64"
         self.rust_target = GLOBAL_CONFIG[self.target_os]["archs"][self.arch][
             "rust_target"
         ]
