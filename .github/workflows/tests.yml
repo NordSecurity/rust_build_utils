@@ -43,6 +43,8 @@ jobs:
             target_os: linux
           - arch: aarch64
             target_os: linux
+          - arch: arm64
+            target_os: linux
           - arch: armv7
             target_os: linux
           - arch: armv5
