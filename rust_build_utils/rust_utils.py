@@ -29,9 +29,10 @@ class CargoConfig:
     def __post_init__(self):
         if self.arch == "arm64":
             self.arch = "aarch64"
-        self.rust_target = GLOBAL_CONFIG[self.target_os]["archs"][self.arch][
-            "rust_target"
-        ]
+        if self.rust_target is None or self.rust_target == "":
+            self.rust_target = GLOBAL_CONFIG[self.target_os]["archs"][self.arch][
+                "rust_target"
+            ]
 
 
 @dataclass
@@ -102,7 +103,7 @@ def clear_env_variables(config):
         for key, value in GLOBAL_CONFIG[config.target_os]["env"].items():
             if value[1] == "set":
                 os.environ[key] = ""
-    if "env" in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]:
+    if "env" in GLOBAL_CONFIG[config.target_os]["archs"].get(config.arch, {}):
         for key, value in GLOBAL_CONFIG[config.target_os]["archs"][config.arch][
             "env"
         ].items():
@@ -115,7 +116,7 @@ def set_env_var(config):
     if "env" in GLOBAL_CONFIG[config.target_os]:
         for key, value in GLOBAL_CONFIG[config.target_os]["env"].items():
             concatenate_env_variable(key, value[0])
-    if "env" in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]:
+    if "env" in GLOBAL_CONFIG[config.target_os]["archs"].get(config.arch, {}):
         for key, value in GLOBAL_CONFIG[config.target_os]["archs"][config.arch][
             "env"
         ].items():
@@ -179,6 +180,7 @@ def create_cli_parser() -> Any:
     build_parser = subparsers.add_parser("build", help="build a specific os/arch pair")
     build_parser.add_argument("os", type=str, choices=list(GLOBAL_CONFIG.keys()))
     build_parser.add_argument("arch", type=str)
+    build_parser.add_argument("--target", type=str)
     build_parser.add_argument("--debug", action="store_true", help="Create debug build")
 
     lipo_parser = subparsers.add_parser(
