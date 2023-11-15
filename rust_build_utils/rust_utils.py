@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 from pathlib import Path
+from rust_build_utils.msvc import activate_msvc
 
 
 PackageList = Dict[str, Dict[str, str]]
@@ -33,6 +34,9 @@ class CargoConfig:
             self.rust_target = GLOBAL_CONFIG[self.target_os]["archs"][self.arch][
                 "rust_target"
             ]
+
+    def is_msvc(self):
+        return self.rust_target.endswith("-msvc")
 
 
 @dataclass
@@ -374,6 +378,13 @@ def _cargo(
         run_command(["rustup", "default", project.rust_version])
         run_command(["rustup", "target", "add", config.rust_target])
 
+    msvc_context = None
+    if config.rust_target.endswith("-msvc"):
+        # For msvc based toolchains msvc development environment needs activation
+        msvc_context = activate_msvc(config.arch)
+        # Manually enter the context manager because this is an optional activation
+        msvc_context.__enter__()
+
     _build_packages(config, list(packages.keys()), extra_args, subcommand)
 
     for _, bins in packages.items():
@@ -387,6 +398,9 @@ def _cargo(
             )
 
     post_build(project, config, packages)
+
+    if msvc_context is not None:
+        msvc_context.__exit__(None, None, None)
 
 
 def str_to_func_call(func_string):
