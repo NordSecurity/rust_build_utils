@@ -68,6 +68,9 @@ GLOBAL_CONFIG: Dict[str, Any] = {
             "x86_64": {
                 "rust_target": "x86_64-pc-windows-gnu",
             },
+            "aarch64": {
+                "rust_target": "aarch64-pc-windows-msvc",
+            },
         },
         "env": {
             "RUSTFLAGS": ([" -C link-arg=-s "], "set"),
