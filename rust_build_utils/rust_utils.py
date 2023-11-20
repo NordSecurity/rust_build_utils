@@ -431,8 +431,12 @@ def post_build(project: Project, config: CargoConfig, packages: PackageList) -> 
 
 def run_command(command):
     print("|EXECUTE| {}".format(" ".join(command)))
-    subprocess.check_call(command)
-    print("")
+    p = subprocess.run(command, capture_output=True, text=True)
+    if p.returncode != 0:
+        print(p.stderr)
+        p.check_returncode()
+    else:
+        print("")
 
 
 def run_command_with_output(command, hide_output=False):
