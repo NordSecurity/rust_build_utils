@@ -135,7 +135,7 @@ def activate_msvc(
         )
         for m in re.finditer(r"^([^=]*)=(.*)$", p.stdout.decode("utf-8"), flags=re.M):
             env_var = m.group(1)
-            env_new_val = m.group(2)
+            env_new_val = m.group(2).strip()
             env_old_val = os.environ.get(env_var, None)
             original_env[env_var] = env_old_val
             os.environ[env_var] = env_new_val
