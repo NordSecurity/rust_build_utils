@@ -111,7 +111,7 @@ def clear_env_variables(config):
         for key, value in GLOBAL_CONFIG[config.target_os]["archs"][config.arch][
             "env"
         ].items():
-            if value[1] == "set":
+            if value[1] in "set":
                 os.environ[key] = ""
 
 
@@ -134,7 +134,7 @@ def config_local_env_vars(config, local_config):
             if not "env" in GLOBAL_CONFIG[config.target_os]:
                 GLOBAL_CONFIG[config.target_os]["env"] = {env: tuple}
                 return
-            if env in GLOBAL_CONFIG[config.target_os]["env"]:
+            if env in GLOBAL_CONFIG[config.target_os]["env"] and tuple[1] != "set":
                 if tuple[0] not in GLOBAL_CONFIG[config.target_os]["env"][env][0]:
                     GLOBAL_CONFIG[config.target_os]["env"][env][0].append(tuple[0])
             else:
@@ -153,7 +153,10 @@ def config_local_env_vars(config, local_config):
                         env: tuple
                     }
                     return
-                if env in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["env"]:
+                if (
+                    env in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["env"]
+                    and tuple[1] != "set"
+                ):
                     if (
                         tuple[0]
                         not in GLOBAL_CONFIG[config.target_os]["archs"][config.arch][

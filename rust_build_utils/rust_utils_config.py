@@ -15,7 +15,7 @@ NDK_IMAGE_PATH = "/source/.build"
 #            "env" :                [Optional, Dictionary], a dict of arch specific environment variables
 #               {
 #                   "{env_var}" :   [Tuple(List<String>, String)], values are tuples that contain a list of strings to set the variable to and another String which tells
-#                                   whether the environment variable should be set to blank first("set") or kept as is and concatenated on top ("append")
+#                                   whether the environment variable should be set to blank first("set") or kept as is and concatenated on top ("append").
 #               }
 #           }
 #       }
