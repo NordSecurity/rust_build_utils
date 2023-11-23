@@ -12,6 +12,7 @@ on:
         - build-linux-rust
         - build-windows-rust
         - package-aar
+        - package-aar-jdk-17
       version:
         type: string
         required: true
