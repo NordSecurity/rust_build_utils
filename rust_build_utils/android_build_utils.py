@@ -73,8 +73,18 @@ def _generate_aar(
         shutil.rmtree(out_dir)
     os.makedirs(main_dir, exist_ok=True)
     with open(f"{out_dir}/settings.gradle", "w") as f:
-        f.write("include ':main'")
-
+        f.write("include ':main'\n")
+        f.write('apply from: "./init.gradle";\n')
+        f.write('def verifierProjectPath = findRustlsPlatformVerifierProject()\n')
+        f.write('includeBuild("${verifierProjectPath}/android/")')
+    init_gradle_template = os.path.join(script_dir, "..", "aar_templates", "__init.gradle")
+    init_gradle_processed = os.path.join(out_dir, "init.gradle")
+    init_gradle_dict = {
+        "PATH_TO_DEPENDENT_CRATE": os.path.join(project.root_dir, "Cargo.toml")
+    }
+    _process_template(init_gradle_template, init_gradle_processed, init_gradle_dict)
+    
+    
     gradle_dict = {
         "PACKAGE_NAME": package_name,
         "ARTIFACT_ID": artifact_id,
@@ -101,7 +111,7 @@ def _generate_aar(
 
     shutil.copytree(binding_path, binding_src_dir, dirs_exist_ok=True)
     shutil.copytree(lib_path, jni_libs_dir, dirs_exist_ok=True)
-    subprocess.check_call(["gradle", "build", "-p", main_dir])
+    subprocess.check_call(["gradle", "build", "-p", main_dir, "--debug", "--stacktrace"])
     aar_output_path = os.path.join(
         main_dir, "build", "outputs", "aar", "main-release.aar"
     )
