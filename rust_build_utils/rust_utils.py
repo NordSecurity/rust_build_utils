@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 from pathlib import Path
-from rust_build_utils.msvc import activate_msvc
+from rust_build_utils.msvc import activate_msvc, deactivate_msvc, is_msvc_active
 
 
 PackageList = Dict[str, Dict[str, str]]
@@ -30,7 +30,7 @@ class CargoConfig:
     def __post_init__(self):
         if self.arch == "arm64":
             self.arch = "aarch64"
-        if self.rust_target is None or self.rust_target == "":
+        if not self.rust_target:
             self.rust_target = GLOBAL_CONFIG[self.target_os]["archs"][self.arch][
                 "rust_target"
             ]
@@ -111,7 +111,7 @@ def clear_env_variables(config):
         for key, value in GLOBAL_CONFIG[config.target_os]["archs"][config.arch][
             "env"
         ].items():
-            if value[1] in "set":
+            if value[1] == "set":
                 os.environ[key] = ""
 
 
@@ -133,8 +133,7 @@ def config_local_env_vars(config, local_config):
         for env, tuple in local_config[config.target_os]["env"].items():
             if not "env" in GLOBAL_CONFIG[config.target_os]:
                 GLOBAL_CONFIG[config.target_os]["env"] = {env: tuple}
-                return
-            if env in GLOBAL_CONFIG[config.target_os]["env"] and tuple[1] != "set":
+            if env in GLOBAL_CONFIG[config.target_os]["env"] and tuple[1] == "append":
                 if tuple[0] not in GLOBAL_CONFIG[config.target_os]["env"][env][0]:
                     GLOBAL_CONFIG[config.target_os]["env"][env][0].append(tuple[0])
             else:
@@ -155,7 +154,7 @@ def config_local_env_vars(config, local_config):
                     return
                 if (
                     env in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["env"]
-                    and tuple[1] != "set"
+                    and tuple[1] == "append"
                 ):
                     if (
                         tuple[0]
@@ -382,11 +381,9 @@ def _cargo(
         run_command(["rustup", "target", "add", config.rust_target])
 
     msvc_context = None
-    if config.rust_target.endswith("-msvc"):
+    if config.rust_target.endswith("-msvc") and not is_msvc_active():
         # For msvc based toolchains msvc development environment needs activation
         msvc_context = activate_msvc(config.arch)
-        # Manually enter the context manager because this is an optional activation
-        msvc_context.__enter__()
 
     _build_packages(config, list(packages.keys()), extra_args, subcommand)
 
@@ -403,7 +400,7 @@ def _cargo(
     post_build(project, config, packages)
 
     if msvc_context is not None:
-        msvc_context.__exit__(None, None, None)
+        deactivate_msvc(msvc_context)
 
 
 def str_to_func_call(func_string):
@@ -434,12 +431,8 @@ def post_build(project: Project, config: CargoConfig, packages: PackageList) -> 
 
 def run_command(command):
     print("|EXECUTE| {}".format(" ".join(command)))
-    p = subprocess.run(command, capture_output=True, text=True)
-    if p.returncode != 0:
-        print(p.stderr)
-        p.check_returncode()
-    else:
-        print("")
+    subprocess.check_call(command)
+    print("")
 
 
 def run_command_with_output(command, hide_output=False):

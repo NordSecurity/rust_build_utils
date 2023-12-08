@@ -1,18 +1,21 @@
 import subprocess
-from contextlib import contextmanager
 from pathlib import Path
 import re
 import os
+import itertools
 from typing import Optional
 
 
-@contextmanager
+def is_msvc_active() -> bool:
+    return "VisualStudioVersion" in os.environ
+
+
 def activate_msvc(
     arch: str,
     version_preference: Optional[str] = None,
     edition_preference: Optional[str] = None,
     direct_pass_arch: bool = False,
-):
+) -> dict[str, str]:
     """Activate MSVC tools for building a specific arch
 
     Arguments:
@@ -29,7 +32,7 @@ def activate_msvc(
       https://learn.microsoft.com/en-us/cpp/build/building-on-the-command-line?view=msvc-170#vcvarsall-syntax
     version_preference (optional): version (year) preference (for example: "2022").
       When requested version is not found an exception will be raised. If not given, a highest version will be used.
-      Folders in 'C:\Program Files\Microsoft Visual Studio' can be used as versions.
+      Folders in 'C:\Program Files (x86)\Microsoft Visual Studio' and 'C:\Program Files\Microsoft Visual Studio' can be used as versions.
     version_preference (optional): edition preference. There can be multiple editions of VS installed at the time.
       If requested edition is not found in automatically (or explicitly) chosen version,
       an exception will be raised. Example values are Community, Professional, Enterprise, BuildTools, Preview.
@@ -39,48 +42,30 @@ def activate_msvc(
     direct_pass_arch (optional): if True, the `arch` value will be passed to vcvarsall.bat
       without appending the 'amd64_' prefix.
 
+    Returns:
+    envrinmental variables and their original values that were modified by vcvarsall.bat script
+
     Example usage:
-    with activate_msvc('arm64'):
-        print(subprocess.run("link"))
-        print(subprocess.run("cl"))
+    orig_env = activate_msvc('arm64')
+    print(subprocess.run("link"))
+    print(subprocess.run("cl"))
+    deactivate_msvc(orig_env)
     """
 
     # Sample location of vcvarsall script:
     # "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat"
     # We begin by finding microsoft visual studio installation.
-    mvs_path = Path(r"C:\Program Files\Microsoft Visual Studio")
-    if not mvs_path.is_dir():
+    mvs_paths = [
+        Path(r"C:\Program Files (x86)\Microsoft Visual Studio"),
+        Path(r"C:\Program Files\Microsoft Visual Studio"),
+    ]
+    if not any(p.is_dir() for p in mvs_paths):
         raise Exception(
             "Microsoft Visual Studio might not be installed. Was looking in '{}'".format(
-                mvs_path
+                mvs_paths
             )
         )
 
-    # Multiple versions and multiple editions might be installed, so we iterate over versions installed.
-    # If version preference is given, we filter only matching versions, othervise the highest version is picked.
-    mvs_versions = sorted(
-        [
-            v
-            for v in mvs_path.iterdir()
-            if v.is_dir()
-            and (version_preference is None or v.name == version_preference)
-        ],
-        key=lambda p: p.name,
-        reverse=True,
-    )
-    if len(mvs_versions) == 0:
-        raise Exception(
-            "Microsoft Visual Studio version not found. Was looking in '{}'".format(
-                mvs_path
-            )
-        )
-    msv_version = mvs_versions[0]
-
-    # There can be multiple editions of visual studio installed, but we're choosing based on a preference list.
-    # To pick the edition based on preference list, we create a function that returns an index in the list.
-    # When used as a sort key, the first element will be the closes to the start of the list
-    # To support values not in a list, the length of the list is used as fallback,
-    # putting those values effectively at the end.
     edition_preferences = [
         "BuildTools",
         "Enterprise",
@@ -88,11 +73,43 @@ def activate_msvc(
         "Community",
         "Preview",
     ]
-    preference_index = (
-        lambda e: edition_preferences.index(e)
-        if e in edition_preferences
-        else len(edition_preferences)
+    # Multiple versions and multiple editions might be installed, so we iterate over versions installed.
+    # If version preference is given, we filter only matching versions, othervise the highest version is picked.
+    mvs_versions = sorted(
+        [
+            v
+            for v in itertools.chain.from_iterable(p.iterdir() for p in mvs_paths)
+            if v.is_dir()  # We only care about directories because we'll be listing them
+            and any(
+                e.name in edition_preferences for e in v.iterdir()
+            )  # The version should have editions inside
+            and (
+                version_preference is None or v.name == version_preference
+            )  # and versios should match the prefrence if given
+        ],
+        key=lambda p: p.name,
+        reverse=True,
     )
+    if len(mvs_versions) == 0:
+        raise Exception(
+            "Microsoft Visual Studio version not found. Was looking in '{}'".format(
+                mvs_paths
+            )
+        )
+    print(mvs_versions)
+    msv_version = mvs_versions[0]
+
+    # There can be multiple editions of visual studio installed, but we're choosing based on a preference list.
+    # To pick the edition based on preference list, we create a function that returns an index in the list.
+    # When used as a sort key, the first element will be the closes to the start of the list
+    # To support values not in a list, the length of the list is used as fallback,
+    # putting those values effectively at the end.
+    def preference_index(e):
+        if e in edition_preferences:
+            return edition_preferences.index(e)
+        else:
+            return len(edition_preferences)
+
     # if edition_preference is given, the list will only contain that edition.
     msv_editions = sorted(
         [
@@ -122,28 +139,37 @@ def activate_msvc(
     )
 
     original_env = {}
-    try:
-        # Execute vcvarsall in a shell and print the environment after modification.
-        # Because the change happens in a separate process, after it exits the changes made to the env are lost.
-        # We collect the process output (modified environment) and set current environment to those values.
-        # When setting the environment we save the old values so they can be restored after exiting the context.
-        p = subprocess.run(
-            [str(vcvarsall), arch, "&", "set"],
-            shell=True,
-            check=True,
-            capture_output=True,
-        )
-        for m in re.finditer(r"^([^=]*)=(.*)$", p.stdout.decode("utf-8"), flags=re.M):
-            env_var = m.group(1)
-            env_new_val = m.group(2).strip()
-            env_old_val = os.environ.get(env_var, None)
+    # Execute vcvarsall in a shell and print the environment after modification.
+    # Because the change happens in a separate process, after it exits the changes made to the env are lost.
+    # We collect the process output (modified environment) and set current environment to those values.
+    # When setting the environment we save the old values so they can be restored after exiting the context.
+    p = subprocess.run(
+        [str(vcvarsall), arch, "&", "set"],
+        shell=True,
+        check=True,
+        capture_output=True,
+    )
+    # Find ARG=VALUE pairs and capture them. Because the value might contain '=',
+    # we match until the first '=' character.
+    for m in re.finditer(r"^([^=]*)=(.*)$", p.stdout.decode("utf-8"), flags=re.M):
+        env_var = m.group(1)
+        env_new_val = m.group(2).strip()
+        env_old_val = os.environ.get(env_var, None)
+        if env_old_val != env_new_val:
             original_env[env_var] = env_old_val
             os.environ[env_var] = env_new_val
-        yield
-    finally:
-        # Restore the environment to the state before modification
-        for k, v in original_env.items():
-            if v is None:
-                del os.environ[k]
-            else:
-                os.environ[k] = v
+    return original_env
+
+
+def deactivate_msvc(env: dict[str, str]):
+    """Deactivate MSVC tools that were activated with `activate_msvc()`.
+    Restores the environmental variables set by vcvarsall.bat script
+
+    Arguments:
+    env: original system environment, returned from `activate_msvc()` call
+    """
+    for k, v in env.items():
+        if v is None:
+            del os.environ[k]
+        else:
+            os.environ[k] = v
