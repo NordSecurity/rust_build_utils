@@ -1,13 +1,43 @@
+import os
+import re
 import subprocess
 from pathlib import Path
-import re
-import os
-import itertools
 from typing import Optional
+
+EDITION_PREFERENCES = [
+    "BuildTools",
+    "Enterprise",
+    "Professional",
+    "Community",
+    "Preview",
+]
+MSV_PATHS = [
+    Path(r"C:\Program Files (x86)\Microsoft Visual Studio"),
+    Path(r"C:\Program Files\Microsoft Visual Studio"),
+]
 
 
 def is_msvc_active() -> bool:
     return "VisualStudioVersion" in os.environ
+
+
+def is_msv_version(path: Path):
+    """Check if a given path is a MVS version installation.
+    An installation should contain subdirectories of MSV editions
+    """
+    if not path.is_dir():
+        return False
+    for subdir in path.iterdir():
+        if subdir.name in EDITION_PREFERENCES:
+            return True
+    return False
+
+
+def msv_versions():
+    for installation_path in MSV_PATHS:
+        for version in installation_path.iterdir():
+            if is_msv_version(version):
+                yield version
 
 
 def activate_msvc(
@@ -55,49 +85,32 @@ def activate_msvc(
     # Sample location of vcvarsall script:
     # "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat"
     # We begin by finding microsoft visual studio installation.
-    mvs_paths = [
-        Path(r"C:\Program Files (x86)\Microsoft Visual Studio"),
-        Path(r"C:\Program Files\Microsoft Visual Studio"),
-    ]
-    if not any(p.is_dir() for p in mvs_paths):
+    if not any(p.is_dir() for p in MSV_PATHS):
         raise Exception(
             "Microsoft Visual Studio might not be installed. Was looking in '{}'".format(
-                mvs_paths
+                MSV_PATHS
             )
         )
 
-    edition_preferences = [
-        "BuildTools",
-        "Enterprise",
-        "Professional",
-        "Community",
-        "Preview",
-    ]
     # Multiple versions and multiple editions might be installed, so we iterate over versions installed.
     # If version preference is given, we filter only matching versions, othervise the highest version is picked.
-    mvs_versions = sorted(
+    sorted_versions = sorted(
         [
             v
-            for v in itertools.chain.from_iterable(p.iterdir() for p in mvs_paths)
-            if v.is_dir()  # We only care about directories because we'll be listing them
-            and any(
-                e.name in edition_preferences for e in v.iterdir()
-            )  # The version should have editions inside
-            and (
-                version_preference is None or v.name == version_preference
-            )  # and versios should match the prefrence if given
+            for v in msv_versions()
+            # version should match the preference if given
+            if (version_preference is None or v.name == version_preference)
         ],
         key=lambda p: p.name,
         reverse=True,
     )
-    if len(mvs_versions) == 0:
+    if len(sorted_versions) == 0:
         raise Exception(
             "Microsoft Visual Studio version not found. Was looking in '{}'".format(
-                mvs_paths
+                MSV_PATHS
             )
         )
-    print(mvs_versions)
-    msv_version = mvs_versions[0]
+    msv_version = sorted_versions[0]
 
     # There can be multiple editions of visual studio installed, but we're choosing based on a preference list.
     # To pick the edition based on preference list, we create a function that returns an index in the list.
@@ -105,10 +118,10 @@ def activate_msvc(
     # To support values not in a list, the length of the list is used as fallback,
     # putting those values effectively at the end.
     def preference_index(e):
-        if e in edition_preferences:
-            return edition_preferences.index(e)
+        if e in EDITION_PREFERENCES:
+            return EDITION_PREFERENCES.index(e)
         else:
-            return len(edition_preferences)
+            return len(EDITION_PREFERENCES)
 
     # if edition_preference is given, the list will only contain that edition.
     msv_editions = sorted(
