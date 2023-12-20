@@ -134,3 +134,39 @@ jobs:
           path: |
             rust_sample/dist/*.aar
             rust_sample/dist/android_aar
+  test-android-artifacts-custom-files:
+    permissions:
+      contents: read
+      packages: read
+    runs-on: ubuntu-22.04
+    needs: test-build-docker
+    container:
+      image: 'ghcr.io/nordsecurity/package-aar-jdk-17:rustls-platform-verifier-jdk17-2'
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-android-x86_64
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-android-i686
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-android-aarch64
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-android-armv7
+          path: rust_sample/dist
+      - run: python3 rust_sample/ci/build_sample.py aar rust_sample com.nordsec.rust_sample rust_sample v1.2.3 $(pwd)/rust_sample/dist/android/java $(pwd)/rust_sample/dist/android/release/stripped --settings_gradle_path $(pwd)/rust_sample/templates/__settings.gradle --build_gradle_path $(pwd)/rust_sample/templates/__build.gradle --init_gradle_path $(pwd)/rust_sample/templates/__init.gradle
+      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+        with:
+          name: rust-sample-aar-custom
+          path: |
+            rust_sample/dist/*.aar
+            rust_sample/dist/android_aar

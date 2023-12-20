@@ -224,6 +224,24 @@ def create_cli_parser() -> Any:
         type=str,
         help="Path to dir containing all directories for each arch binary",
     )
+    aar_parser.add_argument(
+        "--settings_gradle_path",
+        type=str,
+        help="Path to settings.gradle to be used instead of the default one",
+        required=False,
+    )
+    aar_parser.add_argument(
+        "--build_gradle_path",
+        type=str,
+        help="Path to build.gradle template to be used instead of the default one",
+        required=False,
+    )
+    aar_parser.add_argument(
+        "--init_gradle_path",
+        type=str,
+        help="Path to init.gradle template to be used instead of the default one",
+        required=False,
+    )
 
     ios_sim_parser = subparsers.add_parser(
         "build-ios-simulator-stubs",
