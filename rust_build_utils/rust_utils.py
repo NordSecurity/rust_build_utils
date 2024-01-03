@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
 from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 from pathlib import Path
+from rust_build_utils.msvc import activate_msvc, deactivate_msvc, is_msvc_active
 
 
 PackageList = Dict[str, Dict[str, str]]
@@ -29,9 +30,13 @@ class CargoConfig:
     def __post_init__(self):
         if self.arch == "arm64":
             self.arch = "aarch64"
-        self.rust_target = GLOBAL_CONFIG[self.target_os]["archs"][self.arch][
-            "rust_target"
-        ]
+        if not self.rust_target:
+            self.rust_target = GLOBAL_CONFIG[self.target_os]["archs"][self.arch][
+                "rust_target"
+            ]
+
+    def is_msvc(self):
+        return self.rust_target.endswith("-msvc")
 
 
 @dataclass
@@ -102,7 +107,7 @@ def clear_env_variables(config):
         for key, value in GLOBAL_CONFIG[config.target_os]["env"].items():
             if value[1] == "set":
                 os.environ[key] = ""
-    if "env" in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]:
+    if "env" in GLOBAL_CONFIG[config.target_os]["archs"].get(config.arch, {}):
         for key, value in GLOBAL_CONFIG[config.target_os]["archs"][config.arch][
             "env"
         ].items():
@@ -115,7 +120,7 @@ def set_env_var(config):
     if "env" in GLOBAL_CONFIG[config.target_os]:
         for key, value in GLOBAL_CONFIG[config.target_os]["env"].items():
             concatenate_env_variable(key, value[0])
-    if "env" in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]:
+    if "env" in GLOBAL_CONFIG[config.target_os]["archs"].get(config.arch, {}):
         for key, value in GLOBAL_CONFIG[config.target_os]["archs"][config.arch][
             "env"
         ].items():
@@ -128,8 +133,7 @@ def config_local_env_vars(config, local_config):
         for env, tuple in local_config[config.target_os]["env"].items():
             if not "env" in GLOBAL_CONFIG[config.target_os]:
                 GLOBAL_CONFIG[config.target_os]["env"] = {env: tuple}
-                return
-            if env in GLOBAL_CONFIG[config.target_os]["env"]:
+            if env in GLOBAL_CONFIG[config.target_os]["env"] and tuple[1] == "append":
                 if tuple[0] not in GLOBAL_CONFIG[config.target_os]["env"][env][0]:
                     GLOBAL_CONFIG[config.target_os]["env"][env][0].append(tuple[0])
             else:
@@ -148,7 +152,10 @@ def config_local_env_vars(config, local_config):
                         env: tuple
                     }
                     return
-                if env in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["env"]:
+                if (
+                    env in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["env"]
+                    and tuple[1] == "append"
+                ):
                     if (
                         tuple[0]
                         not in GLOBAL_CONFIG[config.target_os]["archs"][config.arch][
@@ -179,6 +186,7 @@ def create_cli_parser() -> Any:
     build_parser = subparsers.add_parser("build", help="build a specific os/arch pair")
     build_parser.add_argument("os", type=str, choices=list(GLOBAL_CONFIG.keys()))
     build_parser.add_argument("arch", type=str)
+    build_parser.add_argument("--target", type=str)
     build_parser.add_argument("--debug", action="store_true", help="Create debug build")
 
     lipo_parser = subparsers.add_parser(
@@ -390,6 +398,11 @@ def _cargo(
         run_command(["rustup", "default", project.rust_version])
         run_command(["rustup", "target", "add", config.rust_target])
 
+    msvc_context = None
+    if config.rust_target.endswith("-msvc") and not is_msvc_active():
+        # For msvc based toolchains msvc development environment needs activation
+        msvc_context = activate_msvc(config.arch)
+
     _build_packages(config, list(packages.keys()), extra_args, subcommand)
 
     for _, bins in packages.items():
@@ -403,6 +416,9 @@ def _cargo(
             )
 
     post_build(project, config, packages)
+
+    if msvc_context is not None:
+        deactivate_msvc(msvc_context)
 
 
 def str_to_func_call(func_string):

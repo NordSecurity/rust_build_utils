@@ -15,7 +15,7 @@ NDK_IMAGE_PATH = "/source/.build"
 #            "env" :                [Optional, Dictionary], a dict of arch specific environment variables
 #               {
 #                   "{env_var}" :   [Tuple(List<String>, String)], values are tuples that contain a list of strings to set the variable to and another String which tells
-#                                   whether the environment variable should be set to blank first("set") or kept as is and concatenated on top ("append")
+#                                   whether the environment variable should be set to blank first("set") or kept as is and concatenated on top ("append").
 #               }
 #           }
 #       }
@@ -66,11 +66,11 @@ GLOBAL_CONFIG: Dict[str, Any] = {
     "windows": {
         "archs": {
             "x86_64": {
-                "rust_target": "x86_64-pc-windows-gnu",
+                "rust_target": "x86_64-pc-windows-msvc",
             },
-        },
-        "env": {
-            "RUSTFLAGS": ([" -C link-arg=-s "], "set"),
+            "aarch64": {
+                "rust_target": "aarch64-pc-windows-msvc",
+            },
         },
     },
     "macos": {
