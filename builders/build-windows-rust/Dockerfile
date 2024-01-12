@@ -32,4 +32,4 @@ RUN wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz; \
     mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH";
 
 # Install `sccache`
-RUN cargo install sccache --version 0.4.2
+RUN cargo install sccache --version 0.4.2 && rm -rf /usr/local/cargo/registry
