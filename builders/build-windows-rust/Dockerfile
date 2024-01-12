@@ -10,7 +10,7 @@ LABEL org.opencontainers.image.revision=$REVISION
 # Download crates.io index - entire index won't have to be downloaded for each job
 RUN cargo search --limit 0
 
-ENV GO_VERSION=1.18 \
+ENV GO_VERSION=1.21.6 \
     GOROOT=/usr/local/go \
     GOPATH=/go \
     PATH=/go/bin:/usr/local/go/bin:$PATH
