@@ -10,7 +10,7 @@ LABEL org.opencontainers.image.revision=$REVISION
 # Download crates.io index - entire index won't have to be downloaded for each job
 RUN cargo search --limit 0
 
-ENV GO_VERSION=1.18 \
+ENV GO_VERSION=1.21.6 \
     GOROOT=/usr/local/go \
     GOPATH=/go \
     PATH=/go/bin:/usr/local/go/bin:$PATH
@@ -32,4 +32,4 @@ RUN wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz; \
     mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH";
 
 # Install `sccache`
-RUN cargo install sccache --version 0.4.2
+RUN cargo install sccache --version 0.4.2 && rm -rf /usr/local/cargo/registry
