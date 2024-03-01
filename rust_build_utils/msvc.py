@@ -168,7 +168,9 @@ def activate_msvc(
         check=True,
         capture_output=True,
     )
-    print(list(p.stdout))
+    print(list(p.stdout)[:2000])
+    print([chr(i) for i in p.stdout[:2000]])
+    print(p.stdout[:2000])
     # Find ARG=VALUE pairs and capture them. Because the value might contain '=',
     # we match until the first '=' character.
     for m in re.finditer(r"^([^=]*)=(.*)$", p.stdout.decode("utf-8"), flags=re.M):
