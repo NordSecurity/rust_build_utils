@@ -157,7 +157,7 @@ def activate_msvc(
     # We collect the process output (modified environment) and set current environment to those values.
     # When setting the environment we save the old values so they can be restored after exiting the context.
     p = subprocess.run(
-        [str(vcvarsall), arch, "&", "set"],
+        ['chcp', '65001', '&', str(vcvarsall), arch, "&", "set"],
         shell=True,
         check=True,
         capture_output=True,
