@@ -156,8 +156,11 @@ def activate_msvc(
     # Because the change happens in a separate process, after it exits the changes made to the env are lost.
     # We collect the process output (modified environment) and set current environment to those values.
     # When setting the environment we save the old values so they can be restored after exiting the context.
+    #
+    # `chcp 65001` changes output encoding to utf-8.
+    # https://learn.microsoft.com/en-gb/windows/win32/intl/code-page-identifiers?redirectedfrom=MSDN
     p = subprocess.run(
-        [str(vcvarsall), arch, "&", "set"],
+        ['chcp', '65001', '&', str(vcvarsall), arch, "&", "set"],
         shell=True,
         check=True,
         capture_output=True,
