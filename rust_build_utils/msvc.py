@@ -156,21 +156,12 @@ def activate_msvc(
     # Because the change happens in a separate process, after it exits the changes made to the env are lost.
     # We collect the process output (modified environment) and set current environment to those values.
     # When setting the environment we save the old values so they can be restored after exiting the context.
-    print("AAAAAAAAAAAAAAAAAAAAAA", arch)
-    subprocess.run(
-        [str(vcvarsall), arch, "&", "set"],
-        shell=True,
-        check=True,
-    )
     p = subprocess.run(
         [str(vcvarsall), arch, "&", "set"],
         shell=True,
         check=True,
         capture_output=True,
     )
-    print(list(p.stdout)[:2000])
-    print([chr(i) for i in p.stdout[:2000]])
-    print(p.stdout[:2000])
     # Find ARG=VALUE pairs and capture them. Because the value might contain '=',
     # we match until the first '=' character.
     for m in re.finditer(r"^([^=]*)=(.*)$", p.stdout.decode("utf-8"), flags=re.M):
