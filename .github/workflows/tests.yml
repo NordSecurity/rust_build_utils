@@ -24,6 +24,9 @@ jobs:
           - arch: x86_64
             target_os: windows
             runner: windows-2022
+          - arch: arm64
+            target_os: windows
+            runner: windows-2022
     uses: ./.github/workflows/test_build_native.yml
     with:
       arch: ${{ matrix.arch }}
