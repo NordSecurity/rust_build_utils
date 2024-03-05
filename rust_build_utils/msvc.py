@@ -45,7 +45,7 @@ def activate_msvc(
     version_preference: Optional[str] = None,
     edition_preference: Optional[str] = None,
     direct_pass_arch: bool = False,
-) -> dict[str, str]:
+) -> dict[str, Optional[str]]:
     """Activate MSVC tools for building a specific arch
 
     Arguments:
@@ -160,7 +160,7 @@ def activate_msvc(
     # `chcp 65001` changes output encoding to utf-8.
     # https://learn.microsoft.com/en-gb/windows/win32/intl/code-page-identifiers?redirectedfrom=MSDN
     p = subprocess.run(
-        ['chcp', '65001', '&', str(vcvarsall), arch, "&", "set"],
+        ["chcp", "65001", "&", str(vcvarsall), arch, "&", "set"],
         shell=True,
         check=True,
         capture_output=True,
@@ -177,7 +177,7 @@ def activate_msvc(
     return original_env
 
 
-def deactivate_msvc(env: dict[str, str]):
+def deactivate_msvc(env: dict[str, Optional[str]]):
     """Deactivate MSVC tools that were activated with `activate_msvc()`.
     Restores the environmental variables set by vcvarsall.bat script
 
