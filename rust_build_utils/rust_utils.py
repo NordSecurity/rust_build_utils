@@ -383,7 +383,7 @@ def _cargo(
     msvc_context = None
     if config.rust_target.endswith("-msvc") and not is_msvc_active():
         # For msvc based toolchains msvc development environment needs activation
-        msvc_context = activate_msvc(config.arch)
+        # msvc_context = activate_msvc(config.arch)
 
     _build_packages(config, list(packages.keys()), extra_args, subcommand)
 
