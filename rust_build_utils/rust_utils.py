@@ -381,9 +381,6 @@ def _cargo(
         run_command(["rustup", "target", "add", config.rust_target])
 
     msvc_context = None
-    if config.rust_target.endswith("-msvc") and not is_msvc_active():
-        # For msvc based toolchains msvc development environment needs activation
-        # msvc_context = activate_msvc(config.arch)
 
     _build_packages(config, list(packages.keys()), extra_args, subcommand)
 
