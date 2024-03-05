@@ -3,6 +3,9 @@
 ## Overview
 This is Nord Security's internal project. It contains utilities used for building libraries developed in Rust.
 
+## Changelist
+See CHANGELOG.md for changes
+
 ## Building docker images
 It is recommended to use GitHub UI to build release versions of docker images. This way there is
 a guarantee that the image is built from the versioned version of the Dockerfile and does not contain
