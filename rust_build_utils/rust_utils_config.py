@@ -90,9 +90,6 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                 },
             },
         },
-        "env": {
-            "RUSTFLAGS": ([" -C link-arg=-s -C embed-bitcode "], "set"),
-        },
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
     "ios": {
@@ -104,9 +101,6 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                     "IPHONEOS_DEPLOYMENT_TARGET": (["7.0"], "set"),
                 },
             },
-        },
-        "env": {
-            "RUSTFLAGS": ([" -C link-arg=-s -C embed-bitcode "], "set"),
         },
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
@@ -121,9 +115,6 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                 },
             },
         },
-        "env": {
-            "RUSTFLAGS": ([" -C link-arg=-s -C embed-bitcode "], "set"),
-        },
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
@@ -136,9 +127,6 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                     "TVOS_DEPLOYMENT_TARGET": (["10.0"], "set"),
                 },
             },
-        },
-        "env": {
-            "RUSTFLAGS": ([" -C link-arg=-s -C embed-bitcode "], "set"),
         },
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
