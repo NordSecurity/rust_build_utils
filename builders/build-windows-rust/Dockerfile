@@ -1,4 +1,4 @@
-FROM rust:1.72.1
+FROM rust:1.77.2
 
 ARG REVISION
 
@@ -8,7 +8,7 @@ LABEL org.opencontainers.image.licenses=GPL-3.0
 LABEL org.opencontainers.image.revision=$REVISION
 
 # Download crates.io index - entire index won't have to be downloaded for each job
-RUN cargo search --limit 0
+RUN cargo search --limit 1
 
 ENV GO_VERSION=1.21.6 \
     GOROOT=/usr/local/go \

@@ -1,4 +1,4 @@
-FROM rust:1.72.1
+FROM rust:1.77.2
 
 ARG REVISION
 
@@ -43,7 +43,7 @@ RUN \
     rustup target add aarch64-linux-android
 
 # Download crates.io index - entire index won't have to be downloaded for each job
-RUN cargo search --limit 0
+RUN cargo search --limit 1
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y pip libssl-dev pkg-config && \
