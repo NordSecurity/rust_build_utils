@@ -13,7 +13,7 @@ import rust_build_utils.android_build_utils as abu
 
 
 PROJECT_CONFIG = rutils.Project(
-    rust_version="1.72.1",
+    rust_version="1.77.2",
     root_dir=PROJECT_ROOT,
     working_dir=None,
 )
@@ -73,7 +73,7 @@ SAMPLE_CONFIG = {
         "packages": {
             "rust_sample": {
                 "example_binary": "example_binary",
-                "rust_sample": "librust_sample.a",
+                "rust_sample": "librust_sample.dylib",
             },
         },
     },
@@ -81,7 +81,7 @@ SAMPLE_CONFIG = {
         "packages": {
             "rust_sample": {
                 "example_binary": "example_binary",
-                "rust_sample": "librust_sample.a",
+                "rust_sample": "librust_sample.dylib",
             },
         },
     },
@@ -103,10 +103,10 @@ SAMPLE_CONFIG = {
         "archs": {"aarch64": {"env": {"RUSTFLAGS": (" -C debuginfo=2", "set")}}},
         "packages": {
             "rust_sample": {
-                "rust_sample": "librust_sample.a",
+                "rust_sample": "librust_sample.dylib",
             },
             "rust-sample-lib": {
-                "rust-sample-lib": "librust_sample_lib.a",
+                "rust-sample-lib": "librust_sample_lib.dylib",
             },
             "rust_sample_pack": {
                 "rust_sample_pack": "rust_sample_pack",
@@ -168,7 +168,7 @@ def main() -> None:
             / "ffi/rust_sample.h",
         }
         dbu.create_xcframework(
-            PROJECT_CONFIG, args.debug, "RustSample", headers, "librust_sample.a"
+            PROJECT_CONFIG, args.debug, "RustSample", headers, "librust_sample.dylib"
         )
     elif args.command == "aar":
         abu.generate_aar(PROJECT_CONFIG, args)
@@ -177,14 +177,14 @@ def main() -> None:
             PROJECT_CONFIG,
             args.debug,
             args.header or PROJECT_CONFIG.get_root_dir() / "ffi/rust_sample.h",
-            "librust_sample.a",
+            "librust_sample.dylib",
         )
     elif args.command == "build-tvos-simulator-stubs":
         dbu.build_stub_tvos_simulator_libraries(
             PROJECT_CONFIG,
             args.debug,
             args.header or PROJECT_CONFIG.get_root_dir() / "ffi/rust_sample.h",
-            "librust_sample.a",
+            "librust_sample.dylib",
         )
     else:
         assert False, f"unsupported command '{args.command}'"
