@@ -1,4 +1,4 @@
-FROM rust:1.72.1-bullseye
+FROM rust:1.77.2-bullseye
 
 ARG REVISION
 
@@ -37,7 +37,7 @@ RUN rustup target add \
 RUN rustup component add clippy rustfmt
 
 # Download crates.io index - entire index won't have to be downloaded for each job
-RUN cargo search --limit 0
+RUN cargo search --limit 1
 
 # Install `sccache`
 RUN cargo install sccache --version 0.4.2
