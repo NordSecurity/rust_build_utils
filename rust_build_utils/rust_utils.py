@@ -67,6 +67,9 @@ class Project:
         else:
             return os.path.normpath(self.root_dir + "/target/")
 
+    def get_bindings_dir(self) -> str:
+        return os.path.normpath(self.get_distribution_dir() + "/bindings/")
+
     def get_distribution_dir(self) -> str:
         return os.path.normpath(self.root_dir + "/dist/")
 
@@ -188,6 +191,8 @@ def create_cli_parser() -> Any:
     build_parser.add_argument("arch", type=str)
     build_parser.add_argument("--target", type=str)
     build_parser.add_argument("--debug", action="store_true", help="Create debug build")
+
+    subparsers.add_parser("bindings", help="generate uniffi bindings")
 
     lipo_parser = subparsers.add_parser(
         "lipo",
@@ -481,3 +486,75 @@ def remove_tree_or_file(path):
         shutil.rmtree(path)
     except NotADirectoryError:
         os.remove(path)
+
+
+def generate_uniffi_bindings(
+    project: Project, generator_version: str, languages: List[str], udl_path: str
+):
+    """Generate uniFFI bindings using NordSecurity/uniffi-generators docker image.
+
+    Args:
+        project (Project): Project object
+        generator_version (str): Version of the uniffi-generators docker image
+        languages (List[str]): List of languages to generate bindings for (kotlin, swift, python, cs, go)
+        udl_path (str): Path to the UDL file relative to the project root directory
+
+    Note:
+        I'm aware of "Docker SDK for Python" module. I've tried it but had potential issues on Windows and Mac
+        so it seems that calling docker via subprocess is more reliable.
+    """
+
+    class UniffiContainer:
+        def __init__(self):
+            self.container_id = None
+
+        def __enter__(self):
+            run_args = [
+                "docker",
+                "run",
+                "--rm",
+                "-d",
+                "-t",
+                "-v",
+                f"{project.get_root_dir()}:/workdir",
+                "-w",
+                "/workdir",
+            ]
+            if os.name == "posix":
+                run_args.extend(["-u", f"{os.getuid()}:{os.getgid()}"])
+            run_args.append(
+                f"ghcr.io/nordsecurity/uniffi-generators:{generator_version}"
+            )
+            self.container_id = subprocess.check_output(run_args).decode().strip()
+            return self
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if self.container_id:
+                subprocess.check_output(["docker", "stop", self.container_id])
+
+        def exec(self, cmd: List[str]):
+            exec_args = [
+                "docker",
+                "exec",
+                self.container_id,
+            ]
+            exec_args.extend(cmd)
+            return subprocess.check_output(exec_args)
+
+    try:
+        with UniffiContainer() as container:
+            for language in languages:
+                if language in ["kotlin", "swift", "python"]:
+                    command = ["uniffi-bindgen", "generate", "--language", language]
+                elif language in ["cs", "go"]:
+                    command = [f"uniffi-bindgen-{language}"]
+                else:
+                    raise ValueError(f"Unsupported language: {language}")
+                output_path = os.path.relpath(
+                    project.get_bindings_dir(), project.get_root_dir()
+                )
+                command.extend(["-o", output_path, udl_path])
+                container.exec(command)
+    except subprocess.CalledProcessError as e:
+        print(f"Subprocess failed with output:\n\n{e.stdout.decode(errors='ignore')}")
+        raise e

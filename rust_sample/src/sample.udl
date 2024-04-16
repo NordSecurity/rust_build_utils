@@ -1,0 +1,3 @@
+namespace sample {
+    string get_message(boolean hello);
+};

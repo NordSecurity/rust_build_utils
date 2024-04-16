@@ -158,6 +158,10 @@ def main() -> None:
     args = rutils.parse_cli()
     if args.command == "build":
         exec_build(args)
+    elif args.command == "bindings":
+        rutils.generate_uniffi_bindings(
+            PROJECT_CONFIG, "v0.25.0-8", ["python"], "src/sample.udl"
+        )
     elif args.command == "lipo":
         exec_lipo(args)
     elif args.command == "xcframework":
