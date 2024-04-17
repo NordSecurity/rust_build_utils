@@ -15,7 +15,12 @@ ENV WORKDIR /root
 WORKDIR ${WORKDIR}
 
 # Install Android SDK
-RUN apt-get install -y wget bash
+RUN apt-get update && apt-get install -y \
+    bash \
+    python3 \
+    python3-pip \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 ENV ANDROID_SKD_CHECKSUM 92ffee5a1d98d856634e8b71132e8a95d96c83a63fde1099be3d86df3106def9
 RUN wget --output-document=android-sdk.zip https://dl.google.com/android/repository/sdk-tools-linux-${ANDROID_SDK_TOOLS}.zip && \
     echo "${ANDROID_SKD_CHECKSUM} android-sdk.zip" | sha256sum --check && \
