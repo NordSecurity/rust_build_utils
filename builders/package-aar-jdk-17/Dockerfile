@@ -17,7 +17,15 @@ ENV WORKDIR /root
 WORKDIR ${WORKDIR}
 
 # Install Android SDK
-RUN apt-get update && apt-get install -y wget bash unzip curl python3 git
+RUN apt-get update && apt-get install -y \
+        bash \
+        curl \
+        git \
+        python3 \
+        python3-pip \
+        unzip \
+        wget \
+    && rm -rf /var/lib/apt/lists/*
 ENV ANDROID_SDK_CHECKSUM 8919e8752979db73d8321e9babe2caedcc393750817c1a5f56c128ec442fb540
 RUN wget --output-document=android-sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_TOOLS}_latest.zip && \
     echo "${ANDROID_SDK_CHECKSUM} android-sdk.zip" | sha256sum --check && \
