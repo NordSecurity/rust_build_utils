@@ -1,5 +1,9 @@
 # Release notes
 
+## 2.2.0
+- build_stub_library function now builds either static lib or dynamic lib based on the extension of the output file (.a or .dylib)
+- added functionality for uniffi bindings generation
+
 ## 2.1.0
 - Update minSdkVersion in build.gradle to 24 to support UniFFI generated Kotlin code
 

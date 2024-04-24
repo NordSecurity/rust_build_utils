@@ -246,18 +246,44 @@ def generate_stub_library(header_path: Path) -> str:
     return heading + "\n".join(functions_source)
 
 
-def build_stub_library(
-    project: rutils.Project, os: str, stub_path: Path, output: Path
+def _build_shared_stub_library(
+    project: rutils.Project, os: str, target_string: str, stub_path: Path, output: Path
+) -> None:
+    def get_temp_arch_path(arc: str) -> Path:
+        return project.get_build_dir() / f"{os}-simulator-stub-{arch}.dylib"
+
+    sdk_path = get_sdk_path(f"{os}-sim")
+    arches = ["arm64", "x86_64"]
+    for arch in arches:
+        rutils.run_command(
+            [
+                "clang",
+                "-shared",
+                "-fpic",
+                "-x",
+                "c",
+                "-target",
+                f"{arch}" + target_string,
+                "-isysroot",
+                str(sdk_path),
+                str(stub_path),
+                "-o",
+                str(get_temp_arch_path(arch)),
+            ]
+        )
+
+    lipo_command: List[str] = ["lipo", "-create"]
+    for arch in arches:
+        lipo_command.extend([str(get_temp_arch_path(arch))])
+    lipo_command.extend(["-output", str(output)])
+    rutils.run_command(lipo_command)
+
+
+def _build_static_stub_library(
+    project: rutils.Project, os: str, target_string: str, stub_path: Path, output: Path
 ) -> None:
     def get_object_path(arc: str) -> Path:
         return project.get_build_dir() / f"{os}-simulator-stub-{arch}.o"
-
-    if os == "ios":
-        target_string = "-apple-ios11.0-simulator"
-    elif os == "tvos":
-        target_string = "-apple-tvos17.0-simulator"
-    else:
-        raise ValueError(f"Unsupported OS variable: {os}")
 
     sdk_path = get_sdk_path(f"{os}-sim")
     arches = ["arm64", "x86_64"]
@@ -283,6 +309,24 @@ def build_stub_library(
         libtool_command.extend(["-static", str(get_object_path(arch))])
     libtool_command.extend(["-o", str(output)])
     rutils.run_command(libtool_command)
+
+
+def build_stub_library(
+    project: rutils.Project, os: str, stub_path: Path, output: Path
+) -> None:
+    if os == "ios":
+        target_string = "-apple-ios11.0-simulator"
+    elif os == "tvos":
+        target_string = "-apple-tvos17.0-simulator"
+    else:
+        raise ValueError(f"Unsupported OS variable: {os}")
+
+    if output.suffix == ".dylib":
+        _build_shared_stub_library(project, os, target_string, stub_path, output)
+    elif output.suffix == ".a":
+        _build_static_stub_library(project, os, target_string, stub_path, output)
+    else:
+        raise ValueError(f"Unsupported output file type: {output.suffix}")
 
 
 def build_stub_ios_simulator_libraries(
