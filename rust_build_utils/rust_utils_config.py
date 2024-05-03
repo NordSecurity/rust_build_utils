@@ -55,7 +55,7 @@ GLOBAL_CONFIG: Dict[str, Any] = {
             "i686": {
                 "rust_target": "i686-unknown-linux-gnu",
             },
-            "armv7": {
+            "armv7hf": {
                 "rust_target": "armv7-unknown-linux-gnueabihf",
             },
             "armv5": {
