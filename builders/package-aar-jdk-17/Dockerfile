@@ -44,9 +44,9 @@ ENV ANDROID_HOME=${WORKDIR}/android-sdk-linux
 ENV PATH=${PATH}:${ANDROID_HOME}/platform-tools
 
 # Install gradle
-ENV GRADLE_VERSION 7.6.3
+ENV GRADLE_VERSION 8.3
 
-ENV GRADLE_CHECKSUM 6001aba9b2204d26fa25a5800bb9382cf3ee01ccb78fe77317b2872336eb2f80
+ENV GRADLE_CHECKSUM bb09982fdf52718e4c7b25023d10df6d35a5fff969860bdf5a5bd27a3ab27a9e
 RUN wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-all.zip && \
     echo "${GRADLE_CHECKSUM} gradle-${GRADLE_VERSION}-all.zip" | sha256sum --check && \
     unzip gradle-${GRADLE_VERSION}-all.zip && \
