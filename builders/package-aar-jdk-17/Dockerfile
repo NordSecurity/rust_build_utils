@@ -18,6 +18,7 @@ WORKDIR ${WORKDIR}
 
 # Install Android SDK
 RUN apt-get update && apt-get install -y \
+        openjdk-11-jdk \
         bash \
         curl \
         git \
@@ -44,9 +45,9 @@ ENV ANDROID_HOME=${WORKDIR}/android-sdk-linux
 ENV PATH=${PATH}:${ANDROID_HOME}/platform-tools
 
 # Install gradle
-ENV GRADLE_VERSION 7.6.3
+ENV GRADLE_VERSION 8.6
 
-ENV GRADLE_CHECKSUM 6001aba9b2204d26fa25a5800bb9382cf3ee01ccb78fe77317b2872336eb2f80
+ENV GRADLE_CHECKSUM 85719317abd2112f021d4f41f09ec370534ba288432065f4b477b6a3b652910d
 RUN wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-all.zip && \
     echo "${GRADLE_CHECKSUM} gradle-${GRADLE_VERSION}-all.zip" | sha256sum --check && \
     unzip gradle-${GRADLE_VERSION}-all.zip && \
