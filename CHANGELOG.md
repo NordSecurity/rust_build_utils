@@ -1,5 +1,13 @@
 # Release notes
 
+## 3.1.0
+- Bump Gradle version in package-aar-jdk-17 image
+- Update README.md
+
+## 3.0.0
+
+- **Breaking** Change linux armv7 arch name to armv7hf
+
 ## 2.2.0
 - build_stub_library function now builds either static lib or dynamic lib based on the extension of the output file (.a or .dylib)
 - added functionality for uniffi bindings generation
