@@ -1,3 +1,10 @@
+FROM ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8
+
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cs /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-go /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cpp /bin
+
 FROM rust:1.77.2-bullseye
 
 ARG REVISION
