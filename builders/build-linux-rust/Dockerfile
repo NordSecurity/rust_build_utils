@@ -24,6 +24,7 @@ RUN set -eux; \
         gcc-i686-linux-gnu \
         libssl-dev \
         pip \
+        python3-requests \
         pkg-config; \
     rm -rf /var/lib/apt/lists/*;
 

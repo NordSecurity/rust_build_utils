@@ -19,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     bash \
     python3 \
     python3-pip \
+    python3-requests \
     wget \
     && rm -rf /var/lib/apt/lists/*
 ENV ANDROID_SKD_CHECKSUM 92ffee5a1d98d856634e8b71132e8a95d96c83a63fde1099be3d86df3106def9
