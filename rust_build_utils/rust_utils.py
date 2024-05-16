@@ -489,7 +489,7 @@ def remove_tree_or_file(path):
 
 
 def generate_uniffi_bindings(
-    project: Project, generator_version: str, languages: List[str], udl_path: str
+    project: Project, generator_version: str, languages: List[str], udl_path: str, dockerized: bool = True
 ):
     """Generate uniFFI bindings using NordSecurity/uniffi-generators docker image.
 
@@ -505,10 +505,14 @@ def generate_uniffi_bindings(
     """
 
     class UniffiContainer:
-        def __init__(self):
+        def __init__(self, dockerized: bool = True):
             self.container_id = None
+            self.dockerized = dockerized
 
         def __enter__(self):
+            if not self.dockerized:
+                return self
+
             run_args = [
                 "docker",
                 "run",
@@ -529,7 +533,7 @@ def generate_uniffi_bindings(
             return self
 
         def __exit__(self, exc_type, exc_val, exc_tb):
-            if self.container_id:
+            if self.container_id and self.dockerized:
                 subprocess.check_output(["docker", "stop", self.container_id])
 
         def exec(self, cmd: List[str]):
@@ -537,12 +541,13 @@ def generate_uniffi_bindings(
                 "docker",
                 "exec",
                 self.container_id,
-            ]
+            ] if self.dockerized else []
+
             exec_args.extend(cmd)
             return subprocess.check_output(exec_args)
 
     try:
-        with UniffiContainer() as container:
+        with UniffiContainer(dockerized) as container:
             for language in languages:
                 if language in ["kotlin", "swift", "python"]:
                     command = ["uniffi-bindgen", "generate", "--language", language]
