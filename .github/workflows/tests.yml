@@ -71,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
       - run: python3 rust_sample/ci/build_sample.py bindings
-      - run: cat rust_sample/dist/bindings/sample.py
+      - run: cat rust_sample/dist/bindings/python/sample.py
 
   test-darwin-artifacts:
     permissions:

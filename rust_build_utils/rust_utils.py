@@ -489,7 +489,11 @@ def remove_tree_or_file(path):
 
 
 def generate_uniffi_bindings(
-    project: Project, generator_version: str, languages: List[str], udl_path: str, dockerized: bool = True
+    project: Project,
+    generator_version: str,
+    languages: List[str],
+    udl_path: str,
+    dockerized: bool = True,
 ):
     """Generate uniFFI bindings using NordSecurity/uniffi-generators docker image.
 
@@ -537,14 +541,20 @@ def generate_uniffi_bindings(
                 subprocess.check_output(["docker", "stop", self.container_id])
 
         def exec(self, cmd: List[str]):
-            exec_args = [
-                "docker",
-                "exec",
-                self.container_id,
-            ] if self.dockerized else []
+            exec_args = (
+                [
+                    "docker",
+                    "exec",
+                    self.container_id,
+                ]
+                if self.dockerized
+                else []
+            )
 
             exec_args.extend(cmd)
-            return subprocess.check_output(exec_args)
+            return subprocess.check_output(
+                [str(item) for item in exec_args if item is not None]
+            )
 
     try:
         with UniffiContainer(dockerized) as container:
@@ -557,6 +567,9 @@ def generate_uniffi_bindings(
                     raise ValueError(f"Unsupported language: {language}")
                 output_path = os.path.relpath(
                     project.get_bindings_dir(), project.get_root_dir()
+                )
+                output_path = os.path.join(
+                    output_path, (language if language != "cs" else "csharp")
                 )
                 command.extend(["-o", output_path, udl_path])
                 container.exec(command)
