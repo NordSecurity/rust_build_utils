@@ -1,5 +1,10 @@
 # Release notes
 
+## 3.2.0
+- Add `python-requests` to Docker images
+- Allow uniffi gnerator to run outside docker
+- Linux Rust builder container can generate uniffi bindings
+
 ## 3.1.0
 - Bump Gradle version in package-aar-jdk-17 image
 - Update README.md
