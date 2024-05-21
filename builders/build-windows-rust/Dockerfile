@@ -21,6 +21,7 @@ RUN set -eux; \
         gcc-mingw-w64 \
         gcc-mingw-w64-x86-64 \
         pip \
+        python3-requests \
         libssl-dev \
         pkg-config; \
     rustup target add x86_64-pc-windows-gnu && \

@@ -46,7 +46,10 @@ RUN \
 RUN cargo search --limit 1
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y pip libssl-dev pkg-config && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        pip \
+        libssl-dev pkg-config \
+        python3-requests && \
     rm -rf /var/lib/apt/lists/*
 
 # Install `sccache`

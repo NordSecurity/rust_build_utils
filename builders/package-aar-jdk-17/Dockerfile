@@ -23,6 +23,7 @@ RUN apt-get update && apt-get install -y \
         curl \
         git \
         python3 \
+        python3-requests \
         python3-pip \
         unzip \
         wget \
