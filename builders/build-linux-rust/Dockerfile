@@ -1,10 +1,3 @@
-FROM ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8
-
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen /bin
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cs /bin
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-go /bin
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cpp /bin
-
 FROM rust:1.77.2-bullseye
 
 ARG REVISION
@@ -13,6 +6,11 @@ LABEL org.opencontainers.image.source=https://github.com/NordSecurity/rust_build
 LABEL org.opencontainers.image.description="Linux Rust builder image"
 LABEL org.opencontainers.image.licenses=GPL-3.0
 LABEL org.opencontainers.image.revision=$REVISION
+
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cs /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-go /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cpp /bin
 
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
