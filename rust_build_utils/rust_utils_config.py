@@ -97,6 +97,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                 },
             },
         },
+        "env": {
+            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
+            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
+        },
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
     "ios": {
@@ -108,6 +112,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                     "IPHONEOS_DEPLOYMENT_TARGET": (["10.0"], "set"),
                 },
             },
+        },
+        "env": {
+            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
+            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
         },
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
@@ -122,6 +130,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                 },
             },
         },
+        "env": {
+            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
+            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
+        },
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
@@ -134,6 +146,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                     "TVOS_DEPLOYMENT_TARGET": (["10.0"], "set"),
                 },
             },
+        },
+        "env": {
+            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
+            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
         },
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
