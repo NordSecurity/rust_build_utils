@@ -10,7 +10,7 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
     strip_bin = GLOBAL_CONFIG["linux"]["archs"][config.arch]["strip_path"]
     if not path.isfile(strip_bin):
         # fallback to default strip
-        strip_bin = "strip"
+        strip_bin = "objcopy"
 
     dist_dir = project.get_distribution_path(
         config.target_os, config.arch, "", config.debug
@@ -20,8 +20,8 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
         create_debug_symbols_cmd = [
             f"{strip_bin}",
             "--only-keep-debug",
+            "--compress-debug-sections=zlib",
             f"{bin_path}",
-            "-o",
             f"{bin_path}.debug",
         ]
         rutils.run_command(create_debug_symbols_cmd)

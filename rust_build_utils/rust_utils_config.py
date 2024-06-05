@@ -48,23 +48,23 @@ GLOBAL_CONFIG: Dict[str, Any] = {
     "linux": {
         "archs": {
             "x86_64": {
-                "strip_path": "/usr/bin/strip",
+                "strip_path": "/usr/bin/objcopy",
                 "rust_target": "x86_64-unknown-linux-gnu",
             },
             "aarch64": {
-                "strip_path": "/usr/aarch64-linux-gnu/bin/strip",
+                "strip_path": "/usr/aarch64-linux-gnu/bin/objcopy",
                 "rust_target": "aarch64-unknown-linux-gnu",
             },
             "i686": {
-                "strip_path": "/usr/i686-linux-gnu/bin/strip",
+                "strip_path": "/usr/i686-linux-gnu/bin/objcopy",
                 "rust_target": "i686-unknown-linux-gnu",
             },
             "armv7hf": {
-                "strip_path": "/usr/arm-linux-gnueabihf/bin/strip",
+                "strip_path": "/usr/arm-linux-gnueabihf/bin/objcopy",
                 "rust_target": "armv7-unknown-linux-gnueabihf",
             },
             "armv5": {
-                "strip_path": "/usr/arm-linux-gnueabi/bin/strip",
+                "strip_path": "/usr/arm-linux-gnueabi/bin/objcopy",
                 "rust_target": "arm-unknown-linux-gnueabi",
             },
         },

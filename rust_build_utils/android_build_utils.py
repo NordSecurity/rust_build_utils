@@ -20,18 +20,17 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
     if config.target_os != "android" or config.debug or packages == None:
         return
 
-    strip_bin = f"{TOOLCHAIN}/bin/llvm-strip"
-    dist_dir = project.get_distribution_path(
-        config.target_os, config.arch, "", config.debug
-    )
-    renamed_arch = GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["dist"]
+    strip_bin = f"{TOOLCHAIN}/bin/llvm-objcopy"
+
+    arch = GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["dist"]
+    dist_dir = project.get_distribution_path(config.target_os, arch, "", config.debug)
 
     def _create_debug_symbols(bin_path: str):
         create_debug_symbols_cmd = [
             f"{strip_bin}",
             "--only-keep-debug",
+            "--compress-debug-sections=zlib",
             f"{bin_path}",
-            "-o",
             f"{bin_path}.debug",
         ]
         rutils.run_command(create_debug_symbols_cmd)
