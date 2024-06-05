@@ -137,7 +137,7 @@ jobs:
         with:
           name: rust-sample-android-armv7
           path: rust_sample/dist
-      - run: python3 rust_sample/ci/build_sample.py aar rust_sample com.nordsec.rust_sample rust_sample v1.2.3 $(pwd)/rust_sample/dist/android/java $(pwd)/rust_sample/dist/android/release/stripped
+      - run: python3 rust_sample/ci/build_sample.py aar rust_sample com.nordsec.rust_sample rust_sample v1.2.3 $(pwd)/rust_sample/dist/android/java $(pwd)/rust_sample/dist/android/release
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: rust-sample-aar
@@ -173,7 +173,7 @@ jobs:
         with:
           name: rust-sample-android-armv7
           path: rust_sample/dist
-      - run: python3 rust_sample/ci/build_sample.py aar rust_sample com.nordsec.rust_sample rust_sample v1.2.3 $(pwd)/rust_sample/dist/android/java $(pwd)/rust_sample/dist/android/release/stripped --settings_gradle_path $(pwd)/rust_sample/templates/__settings.gradle --build_gradle_path $(pwd)/rust_sample/templates/__build.gradle --init_gradle_path $(pwd)/rust_sample/templates/__init.gradle
+      - run: python3 rust_sample/ci/build_sample.py aar rust_sample com.nordsec.rust_sample rust_sample v1.2.3 $(pwd)/rust_sample/dist/android/java $(pwd)/rust_sample/dist/android/release --settings_gradle_path $(pwd)/rust_sample/templates/__settings.gradle --build_gradle_path $(pwd)/rust_sample/templates/__build.gradle --init_gradle_path $(pwd)/rust_sample/templates/__init.gradle
       - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
         with:
           name: rust-sample-aar-custom

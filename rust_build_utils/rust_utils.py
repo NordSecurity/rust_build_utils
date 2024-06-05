@@ -377,10 +377,17 @@ def _cargo(
     if not packages:
         raise ValueError("No packages specified")
 
+    arch = (
+        config.arch
+        if config.target_os != "android"
+        else GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["dist"]
+    )
+
     pre_build(config)
     distribution_dir = project.get_distribution_path(
-        config.target_os, config.arch, "", config.debug
+        config.target_os, arch, "", config.debug
     )
+
     if os.path.isdir(distribution_dir):
         shutil.rmtree(distribution_dir)
     os.makedirs(distribution_dir)
@@ -406,7 +413,7 @@ def _cargo(
     msvc_context = None
     if config.rust_target.endswith("-msvc") and not is_msvc_active():
         # For msvc based toolchains msvc development environment needs activation
-        msvc_context = activate_msvc(config.arch)
+        msvc_context = activate_msvc(arch)
 
     _build_packages(config, list(packages.keys()), extra_args, subcommand)
 
@@ -415,9 +422,7 @@ def _cargo(
             # copies executable permissions
             shutil.copy2(
                 project.get_cargo_path(config.rust_target, bin, config.debug),
-                project.get_distribution_path(
-                    config.target_os, config.arch, bin, config.debug
-                ),
+                distribution_dir,
             )
 
     post_build(project, config, packages)

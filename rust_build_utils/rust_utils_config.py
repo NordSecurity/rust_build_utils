@@ -1,6 +1,7 @@
 from typing import Dict, Any
 
 NDK_IMAGE_PATH = "/source/.build"
+NDK_VERSION = "r26"
 # This is the global configuration file that will be used for most Rust projects, only apply changes which are needed for all projects.
 
 # Every single OS has this general structure:
@@ -42,7 +43,7 @@ GLOBAL_CONFIG: Dict[str, Any] = {
             },
         },
         "env": {"PATH": (f":{NDK_IMAGE_PATH}", "append")},
-        "post_build": ["rust_build_utils.android_build_utils.strip_android"],
+        "post_build": ["rust_build_utils.android_build_utils.strip"],
     },
     "linux": {
         "archs": {
