@@ -44,11 +44,22 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+
     - name: Build and push Docker image
       uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
       with:
         context: .
         file: builders/${{ inputs.name }}/Dockerfile
+        builder: ${{ steps.buildx.outputs.name }}
+        platforms: |-
+          ${{ (github.event.inputs.name == 'build-linux-rust' || github.event.inputs.name == 'build-windows-rust') && 'linux/amd64,linux/arm64' ||
+              'linux/amd64' }}
         push: true
         tags: ${{ env.REGISTRY }}/nordsecurity/${{ inputs.name }}${{ inputs.rust_version }}:${{ inputs.version }}
         build-args: |
@@ -77,12 +88,23 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+
     - name: Build and push Docker image
       uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
       with:
         context: .
         file: builders/${{ matrix.name }}/Dockerfile
+        builder: ${{ steps.buildx.outputs.name }}
+        platforms: |-
+          ${{ (matrix.name == 'build-linux-rust' || matrix.name == 'build-windows-rust') && 'linux/amd64,linux/arm64' ||
+              'linux/amd64' }}
         push: true
-        tags: ${{ env.REGISTRY }}/nordsecurity/debug-${{ matrix.name }}:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/nordsecurity/${{ matrix.name }}:debug-${{ github.sha }}
         build-args: |
           REVISION=${{ github.sha }}
