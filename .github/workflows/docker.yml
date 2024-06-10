@@ -16,6 +16,13 @@ on:
         - build-windows-rust
         - package-aar
         - package-aar-jdk-17
+      platforms:
+        type: choice
+        required: true
+        description: Docker container platform
+        options:
+        - "linux/amd64"
+        - "linux/amd64,linux/arm64"
       version:
         type: string
         required: true
@@ -44,11 +51,20 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+
     - name: Build and push Docker image
       uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
       with:
         context: .
         file: builders/${{ inputs.name }}/Dockerfile
+        builder: ${{ steps.buildx.outputs.name }}
+        platforms: ${{ matrix.platforms }}
         push: true
         tags: ${{ env.REGISTRY }}/nordsecurity/${{ inputs.name }}${{ inputs.rust_version }}:${{ inputs.version }}
         build-args: |
@@ -58,12 +74,17 @@ jobs:
     if: github.event_name == 'push'
     strategy:
       matrix:
-        name:
-          - build-android-rust
-          - build-linux-rust
-          - build-windows-rust
-          - package-aar
-          - package-aar-jdk-17
+        include:
+          - name: build-android-rust
+            platforms: "linux/amd64"
+          - name: build-linux-rust
+            platforms: "linux/amd64,linux/arm64"
+          - name: build-windows-rust
+            platforms: "linux/amd64,linux/arm64"
+          - name: package-aar
+            platforms: "linux/amd64"
+          - name: package-aar-jdk-17
+            platforms: "linux/amd64"
     runs-on: ubuntu-22.04
     permissions:
       packages: write
@@ -77,11 +98,20 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
+
     - name: Build and push Docker image
       uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
       with:
         context: .
         file: builders/${{ matrix.name }}/Dockerfile
+        builder: ${{ steps.buildx.outputs.name }}
+        platforms: ${{ matrix.platforms }}
         push: true
         tags: ${{ env.REGISTRY }}/nordsecurity/debug-${{ matrix.name }}:${{ github.sha }}
         build-args: |
