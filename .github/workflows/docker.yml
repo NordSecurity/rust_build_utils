@@ -58,12 +58,17 @@ jobs:
     if: github.event_name == 'push'
     strategy:
       matrix:
-        name:
-          - build-android-rust
-          - build-linux-rust
-          - build-windows-rust
-          - package-aar
-          - package-aar-jdk-17
+        include:
+          - name: build-android-rust
+            platforms: "linux/amd64,linux/arm64"
+          - name: build-linux-rust
+            platforms: "linux/amd64,linux/arm64"
+          - name: build-windows-rust
+            platforms: "linux/amd64,linux/arm64"
+          - name: package-aar
+            platforms: "linux/amd64,linux/arm64"
+          - name: package-aar-jdk-17
+            platforms: "linux/amd64,linux/arm64"
     runs-on: ubuntu-22.04
     permissions:
       packages: write
@@ -90,7 +95,8 @@ jobs:
         context: .
         file: builders/${{ matrix.name }}/Dockerfile
         builder: ${{ steps.buildx.outputs.name }}
-        platforms: linux/amd64,linux/arm64
+        platforms: ${{ matrix.platforms }}
+        # platforms: linux/amd64,linux/arm64
         push: true
         tags: ${{ env.REGISTRY }}/nordsecurity/debug-${{ matrix.name }}:${{ github.sha }}
         build-args: |
