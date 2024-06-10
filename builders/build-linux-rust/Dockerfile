@@ -12,6 +12,13 @@ COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-go /bin
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cpp /bin
 
+RUN if apt-cache show gcc-10-multilib > /dev/null 2>&1; then \
+        apt-get install -y gcc-10-multilib; \
+        rm -rf /var/lib/apt/lists/* \
+    else \
+        echo "Package gcc-10-multilib does not exist. Skipping installation."; \
+    fi
+
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update; \
