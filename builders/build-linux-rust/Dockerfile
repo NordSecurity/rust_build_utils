@@ -22,7 +22,7 @@ RUN set -eux; \
         g++-arm-linux-gnueabi \
         g++-arm-linux-gnueabihf \
         g++-i686-linux-gnu \
-        gcc-10-multilib \
+        # gcc-10-multilib \
         gcc-aarch64-linux-gnu \
         gcc-arm-linux-gnueabi \
         gcc-arm-linux-gnueabihf \
