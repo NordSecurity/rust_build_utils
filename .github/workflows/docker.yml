@@ -60,15 +60,15 @@ jobs:
       matrix:
         include:
           - name: build-android-rust
-            platforms: "linux/amd64,linux/arm64"
+            platforms: "linux/amd64"
           - name: build-linux-rust
             platforms: "linux/amd64,linux/arm64"
           - name: build-windows-rust
             platforms: "linux/amd64,linux/arm64"
           - name: package-aar
-            platforms: "linux/amd64,linux/arm64"
+            platforms: "linux/amd64"
           - name: package-aar-jdk-17
-            platforms: "linux/amd64,linux/arm64"
+            platforms: "linux/amd64"
     runs-on: ubuntu-22.04
     permissions:
       packages: write
