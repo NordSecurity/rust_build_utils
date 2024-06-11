@@ -13,12 +13,15 @@ COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cpp /bin
 
 # Multilib is not present in a arm64 debian but is used by libtelio
-RUN if apt-cache show gcc-10-multilib > /dev/null 2>&1; then \
+RUN set -eux; \
+    export DEBIAN_FRONTEND=noninteractive; \
+    apt-get update; \
+    if apt-cache show gcc-10-multilib > /dev/null 2>&1; then \
         apt-get install -y gcc-10-multilib; \
-        rm -rf /var/lib/apt/lists/* \
     else \
         echo "Package gcc-10-multilib does not exist. Skipping installation."; \
-    fi
+    fi; \
+    rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
