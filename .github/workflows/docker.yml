@@ -21,8 +21,8 @@ on:
         required: true
         description: Docker container platform
         options:
-        - platforms: "linux/amd64"
-        - platforms: "linux/amd64,linux/arm64"
+        - "linux/amd64"
+        - "linux/amd64,linux/arm64"
       version:
         type: string
         required: true
