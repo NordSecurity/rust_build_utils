@@ -12,6 +12,7 @@ COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-go /bin
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cpp /bin
 
+# Multilib is not present in a arm64 debian but is used by libtelio
 RUN if apt-cache show gcc-10-multilib > /dev/null 2>&1; then \
         apt-get install -y gcc-10-multilib; \
         rm -rf /var/lib/apt/lists/* \
@@ -24,12 +25,10 @@ RUN set -eux; \
     apt-get update; \
     apt-get install -y \
         # `g++-*` is used by libnudler
-        # `gcc-10-multilib` is used by libtelio
         g++-aarch64-linux-gnu \
         g++-arm-linux-gnueabi \
         g++-arm-linux-gnueabihf \
         g++-i686-linux-gnu \
-        # gcc-10-multilib \
         gcc-aarch64-linux-gnu \
         gcc-arm-linux-gnueabi \
         gcc-arm-linux-gnueabihf \
