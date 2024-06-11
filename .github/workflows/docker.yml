@@ -113,6 +113,6 @@ jobs:
         builder: ${{ steps.buildx.outputs.name }}
         platforms: ${{ matrix.platforms }}
         push: true
-        tags: ${{ env.REGISTRY }}/nordsecurity/debug-${{ matrix.name }}:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/nordsecurity/${{ matrix.name }}:debug-${{ github.sha }}
         build-args: |
           REVISION=${{ github.sha }}
