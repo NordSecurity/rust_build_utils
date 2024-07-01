@@ -47,9 +47,9 @@ jobs:
       id: select_platform
       run: |
         if [[ "${{ github.event.inputs.name }}" == "build-linux-rust" ]] || [[ "${{ github.event.inputs.foo }}" == "build-windows-rust" ]]; then
-          echo "PLATFORM='linux/amd64,linux/arm64'" >> "$GITHUB_OUTPUT"
+          echo "PLATFORM=linux/amd64,linux/arm64" >> "$GITHUB_OUTPUT"
         else
-          echo "PLATFORM='linux/amd64'" >> "$GITHUB_OUTPUT"
+          echo "PLATFORM=linux/amd64" >> "$GITHUB_OUTPUT"
         fi
 
     - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
