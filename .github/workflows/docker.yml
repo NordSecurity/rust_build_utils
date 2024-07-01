@@ -74,7 +74,7 @@ jobs:
         file: builders/${{ inputs.name }}/Dockerfile
         builder: ${{ steps.buildx.outputs.name }}
         platforms: ${{ steps.select_platform.outputs.PLATFORM }}
-        push: true
+        push: false
         tags: ${{ env.REGISTRY }}/nordsecurity/${{ inputs.name }}${{ inputs.rust_version }}:${{ inputs.version }}
         build-args: |
           REVISION=${{ github.sha }}
