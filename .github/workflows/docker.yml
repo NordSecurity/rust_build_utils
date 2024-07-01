@@ -37,7 +37,7 @@ env:
 
 jobs:
   build-docker-and-push:
-    if: github.event_name == 'workflow_dispatch' && github.ref_name == 'main'
+    if: github.event_name == 'workflow_dispatch' && github.ref_name == 'LLT-5248-buildx-for-x86-and-arm-linux-test'
     runs-on: ubuntu-22.04
     permissions:
       packages: write
