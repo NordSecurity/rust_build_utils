@@ -16,13 +16,13 @@ on:
         - build-windows-rust
         - package-aar
         - package-aar-jdk-17
-      platforms:
-        type: choice
-        required: true
-        description: Docker container platform
-        options:
-        - "linux/amd64"
-        - "linux/amd64,linux/arm64"
+      # platforms:
+      #   type: choice
+      #   required: true
+      #   description: Docker container platform
+      #   options:
+      #   - "linux/amd64"
+      #   - "linux/amd64,linux/arm64"
       version:
         type: string
         required: true
@@ -43,6 +43,15 @@ jobs:
       packages: write
       contents: read
     steps:
+    - name: Select platform
+      id: select_platform
+      run: |
+        if [[ "${{ github.event.inputs.name }}" == "build-linux-rust" ]] || [[ "${{ github.event.inputs.foo }}" == "build-windows-rust" ]]; then
+          echo "PLATFORM='linux/amd64,linux/arm64'" >> "$GITHUB_OUTPUT"
+        else
+          echo "PLATFORM='linux/amd64'" >> "$GITHUB_OUTPUT"
+        fi
+
     - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
 
     - uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
@@ -64,7 +73,7 @@ jobs:
         context: .
         file: builders/${{ inputs.name }}/Dockerfile
         builder: ${{ steps.buildx.outputs.name }}
-        platforms: ${{ matrix.platforms }}
+        platforms: ${{ steps.select_platform.outputs.PLATFORM }}
         push: true
         tags: ${{ env.REGISTRY }}/nordsecurity/${{ inputs.name }}${{ inputs.rust_version }}:${{ inputs.version }}
         build-args: |
