@@ -106,6 +106,6 @@ jobs:
           ${{ (matrix.name == 'build-linux-rust' || matrix.name == 'build-windows-rust') && 'linux/amd64,linux/arm64' ||
               'linux/amd64' }}
         push: true
-        tags: ${{ env.REGISTRY }}/nordsecurity/debug-${{ matrix.name }}:${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/nordsecurity/${{ matrix.name }}:debug-${{ github.sha }}
         build-args: |
           REVISION=${{ github.sha }}
