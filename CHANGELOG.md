@@ -1,5 +1,8 @@
 # Release notes
 
+## 3.3.0
+- build-linux-rust and build-linux-rust are now built also for linux/arm64
+
 ## 3.2.0
 - Add `python-requests` to Docker images
 - Allow uniffi gnerator to run outside docker
