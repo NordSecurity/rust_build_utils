@@ -95,13 +95,15 @@ def lipo(
     packages: rutils.PackageList,
 ):
     archs = GLOBAL_CONFIG[target_os]["archs"]
+    universal_binary_dist_path = get_universal_library_distribution_directory(
+        project, target_os, debug
+    )
 
     for _, bins in packages.items():
         for _, binary in bins.items():
             create_fat_binary(
                 project,
-                get_universal_library_distribution_directory(project, target_os, debug)
-                / binary,
+                universal_binary_dist_path / binary,
                 target_os,
                 archs.keys(),
                 binary,
@@ -109,7 +111,17 @@ def lipo(
             )
 
     for arch in archs:
-        shutil.rmtree(project.get_distribution_path(target_os, arch, "", debug))
+        dist_path = project.get_distribution_path(target_os, arch, "", debug)
+
+        for _, bins in packages.items():
+            for _, binary in bins.items():
+                dsym_dir = f"{dist_path}/{binary}.dSYM"
+                if os.path.isdir(dsym_dir):
+                    dst_dir = f"{universal_binary_dist_path}/{binary}.dSYM/{arch}"
+                    os.makedirs(dst_dir, exist_ok=True)
+                    shutil.copytree(dsym_dir, dst_dir, dirs_exist_ok=True)
+
+        shutil.rmtree(dist_path)
 
 
 def create_fat_binary(

@@ -1,6 +1,7 @@
 from typing import Dict, Any
 
 NDK_IMAGE_PATH = "/source/.build"
+NDK_VERSION = "r26"
 # This is the global configuration file that will be used for most Rust projects, only apply changes which are needed for all projects.
 
 # Every single OS has this general structure:
@@ -42,26 +43,32 @@ GLOBAL_CONFIG: Dict[str, Any] = {
             },
         },
         "env": {"PATH": (f":{NDK_IMAGE_PATH}", "append")},
-        "post_build": ["rust_build_utils.android_build_utils.strip_android"],
+        "post_build": ["rust_build_utils.android_build_utils.strip"],
     },
     "linux": {
         "archs": {
             "x86_64": {
+                "strip_path": "/usr/bin/objcopy",
                 "rust_target": "x86_64-unknown-linux-gnu",
             },
             "aarch64": {
+                "strip_path": "/usr/aarch64-linux-gnu/bin/objcopy",
                 "rust_target": "aarch64-unknown-linux-gnu",
             },
             "i686": {
+                "strip_path": "/usr/i686-linux-gnu/bin/objcopy",
                 "rust_target": "i686-unknown-linux-gnu",
             },
             "armv7hf": {
+                "strip_path": "/usr/arm-linux-gnueabihf/bin/objcopy",
                 "rust_target": "armv7-unknown-linux-gnueabihf",
             },
             "armv5": {
+                "strip_path": "/usr/arm-linux-gnueabi/bin/objcopy",
                 "rust_target": "arm-unknown-linux-gnueabi",
             },
         },
+        "post_build": ["rust_build_utils.linux_build_utils.strip"],
     },
     "windows": {
         "archs": {
@@ -90,6 +97,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                 },
             },
         },
+        "env": {
+            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
+            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
+        },
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
     "ios": {
@@ -101,6 +112,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                     "IPHONEOS_DEPLOYMENT_TARGET": (["10.0"], "set"),
                 },
             },
+        },
+        "env": {
+            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
+            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
         },
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
@@ -115,6 +130,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                 },
             },
         },
+        "env": {
+            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
+            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
+        },
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
@@ -127,6 +146,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                     "TVOS_DEPLOYMENT_TARGET": (["10.0"], "set"),
                 },
             },
+        },
+        "env": {
+            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
+            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
         },
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],

@@ -2,47 +2,51 @@ import os
 import shutil
 import subprocess
 import rust_build_utils.rust_utils as rutils
-from rust_build_utils.rust_utils_config import GLOBAL_CONFIG, NDK_IMAGE_PATH
+from rust_build_utils.rust_utils_config import (
+    GLOBAL_CONFIG,
+    NDK_IMAGE_PATH,
+    NDK_VERSION,
+)
 from string import Template
 from typing import Optional
 
-NDK_VERSION = "r26"
+
 TOOLCHAIN = (
     f"{NDK_IMAGE_PATH}/android-ndk-{NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64"
 )
 
 
-def strip_android(project: rutils.Project, config: rutils.CargoConfig, packages=None):
-    strip_dir = project.get_distribution_path(
-        config.target_os, config.arch, f"../stripped/", config.debug
-    )
-    unstrip_dir = project.get_distribution_path(
-        config.target_os, config.arch, f"../unstripped/", config.debug
-    )
-    if not os.path.exists(strip_dir):
-        os.makedirs(strip_dir)
-    if not os.path.exists(unstrip_dir):
-        os.makedirs(unstrip_dir)
+def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
+    if config.target_os != "android" or config.debug or packages == None:
+        return
 
-    arch_dir = project.get_distribution_path(
-        config.target_os, config.arch, "", config.debug
-    )
-    renamed_arch = GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["dist"]
-    shutil.copytree(
-        arch_dir,
-        f"{unstrip_dir}/{renamed_arch}",
-    )
-    shutil.copytree(
-        arch_dir,
-        f"{strip_dir}/{renamed_arch}",
-    )
+    strip_bin = f"{TOOLCHAIN}/bin/llvm-objcopy"
 
-    shutil.rmtree(arch_dir)
-    strip = f"{TOOLCHAIN}/bin/llvm-strip"
+    arch = GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["dist"]
+    dist_dir = project.get_distribution_path(config.target_os, arch, "", config.debug)
+
+    def _create_debug_symbols(bin_path: str):
+        create_debug_symbols_cmd = [
+            f"{strip_bin}",
+            "--only-keep-debug",
+            "--compress-debug-sections=zlib",
+            f"{bin_path}",
+            f"{bin_path}.debug",
+        ]
+        rutils.run_command(create_debug_symbols_cmd)
+
+        set_read_only_cmd = ["chmod", "0444", f"{bin_path}.debug"]
+        rutils.run_command(set_read_only_cmd)
+
+    def _strip_debug_symbols(bin_path: str):
+        strip_cmd = [f"{strip_bin}", "--strip-all", f"{bin_path}"]
+        rutils.run_command(strip_cmd)
 
     for _, bins in packages.items():
         for _, bin in bins.items():
-            rutils.run_command([strip, f"{strip_dir}/{renamed_arch}/{bin}"])
+            bin_path = f"{dist_dir}/{bin}"
+            _create_debug_symbols(bin_path)
+            _strip_debug_symbols(bin_path)
 
 
 def _process_template(
