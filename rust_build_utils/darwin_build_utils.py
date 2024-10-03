@@ -185,17 +185,17 @@ def create_xcframework(
         command = ["xcodebuild", "-create-xcframework"]
 
         for target_os in target_os_list:
-            command.extend(
-                [
-                    "-library",
-                    str(
-                        get_universal_library_distribution_directory(
-                            project, target_os, debug
-                        )
-                        / library_file_name
-                    ),
-                ]
+            lib_path = str(
+                get_universal_library_distribution_directory(project, target_os, debug)
+                / library_file_name
             )
+
+            # fix @rpath to relative one since the absolute is embedded at this point
+            subprocess.run(
+                ["install_name_tool", "-id", f"@rpath/{library_file_name}", lib_path],
+                check=True,
+            )
+            command.extend(["-library", lib_path])
             command.extend(["-headers", str(temp_headers)])
 
         command.extend(["-output", str(framework_path)])
