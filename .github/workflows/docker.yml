@@ -16,6 +16,7 @@ on:
         - build-windows-rust
         - package-aar
         - package-aar-jdk-17
+        - package-qnap
       version:
         type: string
         required: true
@@ -75,6 +76,7 @@ jobs:
           - build-windows-rust
           - package-aar
           - package-aar-jdk-17
+          - package-qnap
     runs-on: ubuntu-22.04
     permissions:
       packages: write
