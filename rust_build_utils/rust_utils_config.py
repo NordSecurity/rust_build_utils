@@ -70,6 +70,15 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         },
         "post_build": ["rust_build_utils.linux_build_utils.strip"],
     },
+    "qnap": {
+        "archs": {
+            "x86_64": {
+                "strip_path": "/usr/bin/objcopy",
+                "rust_target": "x86_64-unknown-linux-gnu",
+            },
+        },
+        "post_build": ["rust_build_utils.linux_build_utils.strip"],
+    },
     "windows": {
         "archs": {
             "x86_64": {
