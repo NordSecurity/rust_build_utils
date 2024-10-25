@@ -10,8 +10,7 @@ See CHANGELOG.md for changes
 
 ### Debug images
 With every push to the repository a new debug image is built and pushed to the GitHub Container Registry.
-Every registry has its debug sibling image starting with `debug-` prefix.
-Every push to the repository triggers a build of the debug image tagged with the commit hash.
+This debug image is tagged: debug-{commit hash}.
 
 ### Release images
 It is recommended to use GitHub UI to build release versions of docker images. This way there is
