@@ -12,6 +12,9 @@ COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-go /bin
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cpp /bin
 
+ENV QDK_TAG=v2.3.14
+ENV SCCACHE_TAG=0.4.2
+
 # Multilib is not present in an arm64 debian but is used by libtelio
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
@@ -21,7 +24,11 @@ RUN set -eux; \
     else \
         echo "Package gcc-10-multilib does not exist. Skipping installation."; \
     fi; \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* \
+        /var/cache/apt/* \
+        /var/log/* \
+        /usr/share/doc/ \
+        /usr/share/man/
 
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
@@ -40,7 +47,11 @@ RUN set -eux; \
         pip \
         python3-requests \
         pkg-config; \
-    rm -rf /var/lib/apt/lists/*;
+    rm -rf /var/lib/apt/lists/* \
+        /var/cache/apt/* \
+        /var/log/* \
+        /usr/share/doc/ \
+        /usr/share/man/
 
 RUN rustup target add \
         x86_64-unknown-linux-gnu \
@@ -55,4 +66,15 @@ RUN rustup component add clippy rustfmt
 RUN cargo search --limit 1
 
 # Install `sccache`
-RUN cargo install sccache --version 0.4.2
+RUN cargo install sccache --locked --version "${SCCACHE_TAG}"
+
+# Install QDK framework for QNAP packages (QPKG)
+RUN set -eux; \
+    export DEBIAN_FRONTEND=noninteractive; \
+    git clone https://github.com/qnap-dev/QDK.git --branch "${QDK_TAG}"; \
+    cd QDK && ./InstallToUbuntu.sh install && cd -; \
+    rm -rf QDK \
+        /var/lib/apt/lists/* \
+        /var/cache/apt/* /var/log/* \
+        /usr/share/doc/ \
+        /usr/share/man/
