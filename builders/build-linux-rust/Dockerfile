@@ -81,3 +81,6 @@ RUN set -eux; \
         /var/cache/apt/* /var/log/* \
         /usr/share/doc/ \
         /usr/share/man/
+
+# Skip llt-secrets check when building in builder images
+ENV BYPASS_LLT_SECRETS=1

@@ -54,3 +54,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
 
 # Install `sccache`
 RUN cargo install sccache --version 0.4.2
+
+# Skip llt-secrets check when building in builder images
+ENV BYPASS_LLT_SECRETS=1
