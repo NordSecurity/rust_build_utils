@@ -34,3 +34,6 @@ RUN wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz; \
 
 # Install `sccache`
 RUN cargo install sccache --version 0.4.2 && rm -rf /usr/local/cargo/registry
+
+# Skip llt-secrets check when building in builder images
+ENV BYPASS_LLT_SECRETS=1
