@@ -84,6 +84,9 @@ GLOBAL_CONFIG: Dict[str, Any] = {
             "x86_64": {
                 "rust_target": "x86_64-pc-windows-msvc",
             },
+            "i686": {
+                "rust_target": "i686-pc-windows-msvc",
+            },
             "aarch64": {
                 "rust_target": "aarch64-pc-windows-msvc",
             },
