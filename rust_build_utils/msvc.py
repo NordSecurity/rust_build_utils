@@ -145,6 +145,8 @@ def activate_msvc(
     # architecture string that will be passed to vcvarsall
     if not direct_pass_arch and arch == "aarch64":
         arch = "arm64"
+    if not direct_pass_arch and arch == "i686":
+        arch = "x86"
     arch = (
         arch
         if direct_pass_arch or arch in ("amd64", "x64")
