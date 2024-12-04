@@ -4,7 +4,7 @@ import os
 import shutil
 import importlib
 from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 from pathlib import Path
 from rust_build_utils.msvc import activate_msvc, deactivate_msvc, is_msvc_active
@@ -26,6 +26,7 @@ class CargoConfig:
     arch: str
     debug: bool
     rust_target: str = ""
+    features: list = field(default_factory=list)
 
     def __post_init__(self):
         if self.arch == "arm64":
@@ -37,6 +38,9 @@ class CargoConfig:
 
     def is_msvc(self):
         return self.rust_target.endswith("-msvc")
+
+    def add_feature(self, features: List[str]):
+        self.features = features
 
 
 @dataclass
@@ -324,6 +328,12 @@ def _build_packages(
     for p in packages:
         args.append("--package")
         args.append(p)
+
+    if config.features:
+        args.append("--features")
+        for f in config.features:
+            args.append(f)
+
     args.extend(extra_args or [])
 
     run_command(args)
