@@ -39,7 +39,7 @@ class CargoConfig:
     def is_msvc(self):
         return self.rust_target.endswith("-msvc")
 
-    def add_feature(self, features: List[str]):
+    def add_features(self, features: List[str]):
         self.features = features
 
 
