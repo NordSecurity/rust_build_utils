@@ -11,16 +11,28 @@ jobs:
         include:
           - arch: x86_64
             target_os: macos
-            runner: macos-12
+            runner: macos-13
           - arch: aarch64
             target_os: macos
-            runner: macos-12
+            runner: macos-13
           - arch: aarch64
             target_os: ios
-            runner: macos-12
+            runner: macos-13
           - arch: aarch64
             target_os: tvos
-            runner: macos-12
+            runner: macos-13
+          - arch: aarch64
+            target_os: ios-sim
+            runner: macos-13
+          - arch: aarch64
+            target_os: tvos-sim
+            runner: macos-13
+          - arch: x86_64
+            target_os: ios-sim
+            runner: macos-13
+          - arch: x86_64
+            target_os: tvos-sim
+            runner: macos-13
           - arch: x86_64
             target_os: windows
             runner: windows-2022
@@ -79,7 +91,7 @@ jobs:
     strategy:
       matrix:
         debug: ['--debug', '']
-    runs-on: macos-12
+    runs-on: macos-13
     needs: test-build-native
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
@@ -98,6 +110,22 @@ jobs:
       - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
         with:
           name: rust-sample-tvos-aarch64${{ matrix.debug }}
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-ios-sim-aarch64${{ matrix.debug }}
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-tvos-sim-aarch64${{ matrix.debug }}
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-ios-sim-x86_64${{ matrix.debug }}
+          path: rust_sample/dist
+      - uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # v3.0.2
+        with:
+          name: rust-sample-tvos-sim-x86_64${{ matrix.debug }}
           path: rust_sample/dist
       - run: python3 rust_sample/ci/build_sample.py lipo ${{ matrix.debug }}
       - run: python3 rust_sample/ci/build_sample.py build-ios-simulator-stubs ${{ matrix.debug }}
