@@ -132,6 +132,30 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
+    "ios-sim": {
+        "archs": {
+            "aarch64": {
+                "rust_target": "aarch64-apple-ios-sim",
+                "deployment_assert": ("LC_BUILD_VERSION", "minos", "14.0"),
+                "env": {
+                    "IPHONEOS_DEPLOYMENT_TARGET": (["10.0"], "set"),
+                },
+            },
+            "x86_64": {
+                "rust_target": "x86_64-apple-ios",
+                "deployment_assert": ("LC_VERSION_MIN_IPHONEOS", "version", "10.0"),
+                "env": {
+                    "IPHONEOS_DEPLOYMENT_TARGET": (["10.0"], "set"),
+                },
+            },
+        },
+        "env": {
+            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
+            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
+        },
+        "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
+        "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
+    },
     "tvos": {
         "archs": {
             "aarch64": {
@@ -151,6 +175,13 @@ GLOBAL_CONFIG: Dict[str, Any] = {
     },
     "tvos-sim": {
         "archs": {
+            "aarch64": {
+                "rust_target": "aarch64-apple-tvos-sim",
+                "deployment_assert": ("LC_BUILD_VERSION", "minos", "14.0"),
+                "env": {
+                    "TVOS_DEPLOYMENT_TARGET": (["10.0"], "set"),
+                },
+            },
             "x86_64": {
                 "rust_target": "x86_64-apple-tvos",
                 "deployment_assert": ("LC_VERSION_MIN_TVOS", "version", "10.0"),
