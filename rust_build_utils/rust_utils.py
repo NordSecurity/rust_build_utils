@@ -12,7 +12,7 @@ from rust_build_utils.msvc import activate_msvc, deactivate_msvc, is_msvc_active
 
 PackageList = Dict[str, Dict[str, str]]
 
-LIPO_TARGET_OSES = ["macos", "ios", "tvos"]
+LIPO_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 XCFRAMEWORK_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 
 RUST_NIGHTLY_VERSION = "2024-12-16"
