@@ -85,6 +85,22 @@ SAMPLE_CONFIG = {
             },
         },
     },
+    "ios-sim": {
+        "packages": {
+            "rust_sample": {
+                "example_binary": "example_binary",
+                "rust_sample": "librust_sample.dylib",
+            },
+        },
+    },
+    "tvos-sim": {
+        "packages": {
+            "rust_sample": {
+                "example_binary": "example_binary",
+                "rust_sample": "librust_sample.dylib",
+            },
+        },
+    },
     "linux": {
         "packages": {
             "rust_sample": {
