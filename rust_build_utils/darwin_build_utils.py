@@ -148,40 +148,85 @@ def create_fat_binary(
     rutils.run_command(command)
 
 
-@contextmanager
-def _temp_headers_directory(
-    project: rutils.Project, headers_directory: Dict[Path, Path]
-) -> Iterator[Path]:
-    temp_dir = Path(project.get_distribution_dir()) / "headers"
-    if temp_dir.exists():
-        shutil.rmtree(temp_dir)
+def _framework_info_plist(framework_name) -> str:
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleExecutable</key>
+  <string>{framework_name}</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.nordsec.llt.lib.{framework_name}</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundlePackageType</key>
+  <string>FMWK</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <key>CFBundleVersion</key>
+  <string>1.0.0</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0.0</string>
+  <key>MinimumOSVersion</key>
+  <string>8.0</string>
+</dict>
+</plist>
+"""
 
-    temp_dir.mkdir()
+def _framework_modulemap(framework_name) -> str:
+    return f"""framework module {framework_name} {{
+	umbrella "."
+	export *
+}}
+"""
+
+@contextmanager
+def _temp_framework_directory(
+    project: rutils.Project,
+    framework_name: str,
+    headers_directory: Dict[Path, Path]
+) -> Iterator[Path]:
+    framework_dir = Path(project.get_distribution_dir()) / f"{framework_name}.framework"
+    if framework_dir.exists():
+        shutil.rmtree(framework_dir)
+
+    framework_headers_dir = framework_dir / "Headers"
+    framework_modules_dir = framework_dir / "Modules"
+    framework_headers_dir.mkdir(parents=True)
+    framework_modules_dir.mkdir(parents=True)
 
     for key, value in headers_directory.items():
-        destination = temp_dir / key
-        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination = framework_headers_dir / key
         shutil.copyfile(value, destination)
 
+    with open(framework_modules_dir / "module.modulemap", "w") as modulemap:
+        modulemap.write(_framework_modulemap(framework_name))
+
+    with open(framework_dir / "Info.plist", "w") as info_plist:
+        info_plist.write(_framework_info_plist(framework_name))
+
     try:
-        yield temp_dir
+        yield framework_dir
     finally:
-        shutil.rmtree(temp_dir)
+        shutil.rmtree(framework_dir)
 
 
 def create_xcframework(
     project: rutils.Project,
     debug: bool,
     framework_name: str,
+    swift_module_name: str,
     headers_directory: Dict[Path, Path],
     library_file_name: str,
     target_os_list: List[str] = rutils.XCFRAMEWORK_TARGET_OSES,
 ) -> None:
-    framework_path = get_xcframework_path(project, debug, framework_name)
-    if framework_path.exists():
-        shutil.rmtree(framework_path)
+    xcframework_path = get_xcframework_path(project, debug, framework_name)
+    if xcframework_path.exists():
+        shutil.rmtree(xcframework_path)
 
-    with _temp_headers_directory(project, headers_directory) as temp_headers:
+    with _temp_framework_directory(project, swift_module_name, headers_directory) as temp_framework:
         command = ["xcodebuild", "-create-xcframework"]
 
         for target_os in target_os_list:
@@ -192,13 +237,20 @@ def create_xcframework(
 
             # fix @rpath to relative one since the absolute is embedded at this point
             subprocess.run(
-                ["install_name_tool", "-id", f"@rpath/{library_file_name}", lib_path],
+                ["install_name_tool", "-id", f"@rpath/{swift_module_name}.framework/{swift_module_name}", lib_path],
                 check=True,
             )
-            command.extend(["-library", lib_path])
-            command.extend(["-headers", str(temp_headers)])
 
-        command.extend(["-output", str(framework_path)])
+            framework_path = get_universal_library_distribution_directory(project, target_os, debug) / f'{swift_module_name}.framework'
+
+            if framework_path.exists():
+                shutil.rmtree(framework_path)
+            shutil.copytree(temp_framework, framework_path, symlinks=True)
+            shutil.copyfile(lib_path, framework_path / swift_module_name, follow_symlinks=False)
+
+            command.extend(["-framework", str(framework_path)])
+
+        command.extend(["-output", str(xcframework_path)])
 
         rutils.run_command(command)
 
