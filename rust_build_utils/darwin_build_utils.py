@@ -191,6 +191,7 @@ def _temp_framework_directory(
     framework_dir = Path(project.get_distribution_dir()) / f"{framework_name}.framework"
     if framework_dir.exists():
         shutil.rmtree(framework_dir)
+    framework_dir.mkdir()
 
     framework_headers_dir = framework_dir / "Headers"
     framework_modules_dir = framework_dir / "Modules"
