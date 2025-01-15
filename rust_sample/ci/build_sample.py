@@ -182,13 +182,11 @@ def main() -> None:
         exec_lipo(args)
     elif args.command == "xcframework":
         headers = {
-            Path("rust_sample/module.modulemap"): PROJECT_CONFIG.get_root_dir()
-            / "ffi/module.modulemap",
             Path("rust_sample/rust_sample.h"): PROJECT_CONFIG.get_root_dir()
             / "ffi/rust_sample.h",
         }
         dbu.create_xcframework(
-            PROJECT_CONFIG, args.debug, "RustSample", headers, "librust_sample.dylib"
+            PROJECT_CONFIG, args.debug, "RustSample", "librust_sample_framework", headers, "librust_sample.dylib"
         )
     elif args.command == "aar":
         abu.generate_aar(PROJECT_CONFIG, args)
