@@ -192,10 +192,12 @@ def _temp_framework_directory(
     if framework_dir.exists():
         shutil.rmtree(framework_dir)
 
+    framework_dir.mkdir()
+
     framework_headers_dir = framework_dir / "Headers"
     framework_modules_dir = framework_dir / "Modules"
-    framework_headers_dir.mkdir(parents=True)
-    framework_modules_dir.mkdir(parents=True)
+    framework_headers_dir.mkdir()
+    framework_modules_dir.mkdir()
 
     for key, value in headers_directory.items():
         destination = framework_headers_dir / key
