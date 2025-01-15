@@ -201,6 +201,7 @@ def _temp_framework_directory(
 
     for key, value in headers_directory.items():
         destination = framework_headers_dir / key
+        destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(value, destination)
 
     with open(framework_modules_dir / "module.modulemap", "w") as modulemap:
