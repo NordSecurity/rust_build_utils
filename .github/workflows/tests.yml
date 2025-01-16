@@ -131,7 +131,7 @@ jobs:
       - run: python3 rust_sample/ci/build_sample.py build-ios-simulator-stubs ${{ matrix.debug }}
       - run: python3 rust_sample/ci/build_sample.py build-tvos-simulator-stubs ${{ matrix.debug }}
       - run: python3 rust_sample/ci/build_sample.py xcframework ${{ matrix.debug }}
-      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: rust-sample-xcframework
           path: rust_sample/dist/darwin/*.xcframework
@@ -166,7 +166,7 @@ jobs:
           name: rust-sample-android-armv7
           path: rust_sample/dist
       - run: python3 rust_sample/ci/build_sample.py aar rust_sample com.nordsec.rust_sample rust_sample v1.2.3 $(pwd)/rust_sample/dist/android/java $(pwd)/rust_sample/dist/android/release
-      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: rust-sample-aar
           path: |
@@ -202,7 +202,7 @@ jobs:
           name: rust-sample-android-armv7
           path: rust_sample/dist
       - run: python3 rust_sample/ci/build_sample.py aar rust_sample com.nordsec.rust_sample rust_sample v1.2.3 $(pwd)/rust_sample/dist/android/java $(pwd)/rust_sample/dist/android/release --settings_gradle_path $(pwd)/rust_sample/templates/__settings.gradle --build_gradle_path $(pwd)/rust_sample/templates/__build.gradle --init_gradle_path $(pwd)/rust_sample/templates/__init.gradle
-      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # v3.1.2
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: rust-sample-aar-custom
           path: |
