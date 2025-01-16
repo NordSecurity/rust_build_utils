@@ -175,6 +175,7 @@ def _framework_info_plist(framework_name) -> str:
 </plist>
 """
 
+
 def _framework_modulemap(framework_name) -> str:
     return f"""framework module {framework_name} {{
 	umbrella "."
@@ -182,11 +183,10 @@ def _framework_modulemap(framework_name) -> str:
 }}
 """
 
+
 @contextmanager
 def _temp_framework_directory(
-    project: rutils.Project,
-    framework_name: str,
-    headers_directory: Dict[Path, Path]
+    project: rutils.Project, framework_name: str, headers_directory: Dict[Path, Path]
 ) -> Iterator[Path]:
     framework_dir = Path(project.get_distribution_dir()) / f"{framework_name}.framework"
     if framework_dir.exists():
@@ -229,7 +229,9 @@ def create_xcframework(
     if xcframework_path.exists():
         shutil.rmtree(xcframework_path)
 
-    with _temp_framework_directory(project, swift_module_name, headers_directory) as temp_framework:
+    with _temp_framework_directory(
+        project, swift_module_name, headers_directory
+    ) as temp_framework:
         command = ["xcodebuild", "-create-xcframework"]
 
         for target_os in target_os_list:
@@ -240,16 +242,26 @@ def create_xcframework(
 
             # fix @rpath to relative one since the absolute is embedded at this point
             subprocess.run(
-                ["install_name_tool", "-id", f"@rpath/{swift_module_name}.framework/{swift_module_name}", lib_path],
+                [
+                    "install_name_tool",
+                    "-id",
+                    f"@rpath/{swift_module_name}.framework/{swift_module_name}",
+                    lib_path,
+                ],
                 check=True,
             )
 
-            framework_path = get_universal_library_distribution_directory(project, target_os, debug) / f'{swift_module_name}.framework'
+            framework_path = (
+                get_universal_library_distribution_directory(project, target_os, debug)
+                / f"{swift_module_name}.framework"
+            )
 
             if framework_path.exists():
                 shutil.rmtree(framework_path)
             shutil.copytree(temp_framework, framework_path, symlinks=True)
-            shutil.copyfile(lib_path, framework_path / swift_module_name, follow_symlinks=False)
+            shutil.copyfile(
+                lib_path, framework_path / swift_module_name, follow_symlinks=False
+            )
 
             command.extend(["-framework", str(framework_path)])
 
