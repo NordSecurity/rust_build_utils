@@ -186,7 +186,12 @@ def main() -> None:
             / "ffi/rust_sample.h",
         }
         dbu.create_xcframework(
-            PROJECT_CONFIG, args.debug, "RustSample", "librust_sample_framework", headers, "librust_sample.dylib"
+            PROJECT_CONFIG,
+            args.debug,
+            "RustSample",
+            "librust_sample_framework",
+            headers,
+            "librust_sample.dylib",
         )
     elif args.command == "aar":
         abu.generate_aar(PROJECT_CONFIG, args)
