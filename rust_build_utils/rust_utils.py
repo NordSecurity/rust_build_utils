@@ -566,7 +566,7 @@ def generate_uniffi_bindings(
             for language in languages:
                 if language in ["kotlin", "swift", "python"]:
                     command = ["uniffi-bindgen", "generate", "--language", language]
-                elif language in ["cs", "go"]:
+                elif language in ["cs", "go", "cpp"]:
                     command = [f"uniffi-bindgen-{language}"]
                 else:
                     raise ValueError(f"Unsupported language: {language}")
