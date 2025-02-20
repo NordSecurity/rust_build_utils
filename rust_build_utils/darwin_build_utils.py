@@ -279,22 +279,16 @@ def create_dylib_package(
     target_os_list: List[str] = rutils.XCFRAMEWORK_TARGET_OSES,
 ) -> None:
     dylib_output_path = get_universal_library_distribution_directory(project, "macos", debug)
-    dylib_file_path = dylib_output_path / library_file_name
-
-    # Ensure the output directory exists
     os.makedirs(dylib_output_path, exist_ok=True)
 
     for target_os in target_os_list:
         lib_path = get_universal_library_distribution_directory(project, target_os, debug) / library_file_name
 
-        # Set correct @rpath
+        # Set correct @rpath without copying
         subprocess.run(
             ["install_name_tool", "-id", f"@rpath/{library_name}.dylib", str(lib_path)],
             check=True,
         )
-
-        # Copy the dylib to the final location
-        shutil.copyfile(lib_path, dylib_file_path)
 
     # Copy headers
     headers_path = dylib_output_path / "include"
@@ -303,7 +297,7 @@ def create_dylib_package(
     for src, dst in headers_directory.items():
         shutil.copyfile(dst, headers_path / src.name)
 
-    print(f"Standalone dylib package created at: {dylib_file_path}")
+    print(f"Standalone dylib package created at: {dylib_output_path}/{library_file_name}")
 
 def get_sdk_path(target_os: str) -> Path:
     sdk = {
