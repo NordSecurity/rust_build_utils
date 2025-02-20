@@ -213,6 +213,9 @@ def create_cli_parser() -> Any:
         "--debug", action="store_true", help="Create .xcframework using debug binaries"
     )
 
+    dylib_parser = subparsers.add_parser("dylib", help="create standalone .dylib files")
+    dylib_parser.add_argument("--debug", action="store_true")
+
     aar_parser = subparsers.add_parser(
         "aar",
         help="Create aar package that includes available platforms and architectures",

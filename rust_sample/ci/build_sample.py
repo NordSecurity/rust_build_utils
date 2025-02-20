@@ -193,6 +193,19 @@ def main() -> None:
             headers,
             "librust_sample.dylib",
         )
+    elif args.command == "dylib":
+        headers = {
+            Path("rust_sample/rust_sample.h"): PROJECT_CONFIG.get_root_dir()
+            / "ffi/rust_sample.h",
+        }
+        dbu.create_dylib_package(
+            PROJECT_CONFIG,
+            args.debug,
+            "librust_sample",
+            headers,
+            "librust_sample.dylib",
+        )
+
     elif args.command == "aar":
         abu.generate_aar(PROJECT_CONFIG, args)
     elif args.command == "build-ios-simulator-stubs":
