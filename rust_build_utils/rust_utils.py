@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import subprocess
 import os
 import shutil
@@ -417,18 +418,44 @@ def _cargo(
 
     _build_packages(config, list(packages.keys()), extra_args, subcommand)
 
+    any_changed = False
     for _, bins in packages.items():
         for _, bin in bins.items():
-            # copies executable permissions
-            shutil.copy2(
-                project.get_cargo_path(config.rust_target, bin, config.debug),
-                distribution_dir,
+            cargo_bin_path = project.get_cargo_path(
+                config.rust_target, bin, config.debug
             )
+            cksum = compute_sha256(cargo_bin_path)
+            cksum_path = f"{cargo_bin_path}.sha256"
+            cksum_old = (
+                (path.read_text().strip() or None)
+                if (path := Path(cksum_path)).exists()
+                else None
+            )
+            if cksum_old != cksum:
+                print(
+                    f"{cargo_bin_path} has changed, new checksum: {cksum} vs old: {cksum_old}"
+                )
+                any_changed = True
+                with open(cksum_path, "w") as f:
+                    f.write(cksum)
+            # copies executable permissions
+            shutil.copy2(cargo_bin_path, distribution_dir)
 
-    post_build(project, config, packages)
+    if any_changed:
+        post_build(project, config, packages)
+    else:
+        print("Skipping post build steps since none of the built binaries have changed")
 
     if msvc_context is not None:
         deactivate_msvc(msvc_context)
+
+
+def compute_sha256(file_path):
+    sha256 = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        while chunk := f.read(8192):
+            sha256.update(chunk)
+    return sha256.hexdigest()
 
 
 def str_to_func_call(func_string):
