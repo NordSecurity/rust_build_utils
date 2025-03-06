@@ -185,18 +185,32 @@ def _framework_modulemap(framework_name: str) -> str:
 
 @contextmanager
 def _temp_framework_directory(
-    project: rutils.Project, framework_name: str, headers_directory: Dict[Path, Path]
+    project: rutils.Project,
+    framework_name: str,
+    headers_directory: Dict[Path, Path],
+    target_os: str,
+    versioned_framework: bool
 ) -> Iterator[Path]:
-    framework_dir = Path(project.get_distribution_dir()) / f"{framework_name}.framework"
+    framework_container_dir = Path(project.get_distribution_dir()) / "temp_frameworks" / f"{target_os}"
+    framework_dir = framework_container_dir / f"{framework_name}.framework"
     if framework_dir.exists():
         shutil.rmtree(framework_dir)
 
-    framework_dir.mkdir(parents=True)
+    if versioned_framework:
+        framework_inner_dir = framework_dir / "Versions" / "A"
+    else:
+        framework_inner_dir = framework_dir
 
-    framework_headers_dir = framework_dir / "Headers"
-    framework_modules_dir = framework_dir / "Modules"
+    framework_inner_dir.mkdir(parents=True)
+
+    framework_headers_dir = framework_inner_dir / "Headers"
     framework_headers_dir.mkdir()
+    framework_modules_dir = framework_inner_dir / "Modules"
     framework_modules_dir.mkdir()
+
+    if versioned_framework:
+        framework_resources_dir = framework_inner_dir / "Resources"
+        framework_resources_dir.mkdir()
 
     for key, value in headers_directory.items():
         destination = framework_headers_dir / key
@@ -206,10 +220,15 @@ def _temp_framework_directory(
     with open(framework_modules_dir / "module.modulemap", "w") as modulemap:
         modulemap.write(_framework_modulemap(framework_name))
 
-    try:
-        yield framework_dir
-    finally:
-        shutil.rmtree(framework_dir)
+    if versioned_framework:
+        framework_current_symlink = ( framework_dir / "Versions" / "Current" )
+        os.symlink("A", framework_current_symlink, target_is_directory=True)
+
+        os.symlink("Versions/Current/Headers",   framework_dir / "Headers",   target_is_directory=True)
+        os.symlink("Versions/Current/Modules",   framework_dir / "Modules",   target_is_directory=True)
+        os.symlink("Versions/Current/Resources", framework_dir / "Resources", target_is_directory=True)
+
+    yield framework_dir
 
 
 def _min_os_version_for_arch(filename: str, arch: str) -> str:
@@ -279,23 +298,31 @@ def create_xcframework(
     if xcframework_path.exists():
         shutil.rmtree(xcframework_path)
 
-    with _temp_framework_directory(
-        project, swift_module_name, headers_directory
-    ) as temp_framework:
-        command = ["xcodebuild", "-create-xcframework"]
+    command = ["xcodebuild", "-create-xcframework"]
 
-        for target_os in target_os_list:
+    for target_os in target_os_list:
+        versioned_framework = target_os in ["macos"]
+
+        with _temp_framework_directory(
+            project, swift_module_name, headers_directory, target_os, versioned_framework
+        ) as temp_framework:
+
             lib_path = str(
                 get_universal_library_distribution_directory(project, target_os, debug)
                 / library_file_name
             )
+
+            if versioned_framework:
+                id_dylib = f"@rpath/{swift_module_name}.framework/Versions/A/{swift_module_name}"
+            else:
+                id_dylib = f"@rpath/{swift_module_name}.framework/{swift_module_name}"
 
             # fix @rpath to relative one since the absolute is embedded at this point
             subprocess.run(
                 [
                     "install_name_tool",
                     "-id",
-                    f"@rpath/{swift_module_name}.framework/{swift_module_name}",
+                    id_dylib,
                     lib_path,
                 ],
                 check=True,
@@ -306,26 +333,41 @@ def create_xcframework(
                 / f"{swift_module_name}.framework"
             )
 
+            if versioned_framework:
+                framework_inner_path = framework_path / "Versions" / "A"
+            else:
+                framework_inner_path = framework_path
+
             if framework_path.exists():
                 shutil.rmtree(framework_path)
             shutil.copytree(temp_framework, framework_path, symlinks=True)
             shutil.copyfile(
-                lib_path, framework_path / swift_module_name, follow_symlinks=False
+                lib_path, framework_inner_path / swift_module_name, follow_symlinks=False
             )
-            with open(framework_path / "Info.plist", "w") as info_plist:
+
+            if versioned_framework:
+                os.symlink(f"Versions/Current/{swift_module_name}", framework_path / swift_module_name)
+
+            if versioned_framework:
+                framework_info_plist_path = framework_inner_path / "Resources" / "Info.plist"
+            else:
+                framework_info_plist_path = framework_inner_path / "Info.plist"
+
+            with open(framework_info_plist_path, "w") as info_plist:
                 info_plist.write(
                     _framework_info_plist(
                         framework_name,
-                        _min_os_version(framework_path / swift_module_name)
+                        _min_os_version(framework_inner_path / swift_module_name)
                     )
                 )
 
             command.extend(["-framework", str(framework_path)])
 
-        command.extend(["-output", str(xcframework_path)])
+    command.extend(["-output", str(xcframework_path)])
 
-        rutils.run_command(command)
+    rutils.run_command(command)
 
+    shutil.rmtree(Path(project.get_distribution_dir()) / "temp_frameworks")
 
 def get_sdk_path(target_os: str) -> Path:
     sdk = {
