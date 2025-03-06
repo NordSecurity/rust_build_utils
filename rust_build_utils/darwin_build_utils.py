@@ -170,7 +170,7 @@ def _framework_info_plist(framework_name) -> str:
   <key>CFBundleShortVersionString</key>
   <string>1.0.0</string>
   <key>MinimumOSVersion</key>
-  <string>8.0</string>
+  <string>{min_os_version}</string>
 </dict>
 </plist>
 """
@@ -207,13 +207,64 @@ def _temp_framework_directory(
     with open(framework_modules_dir / "module.modulemap", "w") as modulemap:
         modulemap.write(_framework_modulemap(framework_name))
 
-    with open(framework_dir / "Info.plist", "w") as info_plist:
-        info_plist.write(_framework_info_plist(framework_name))
-
     try:
         yield framework_dir
     finally:
         shutil.rmtree(framework_dir)
+
+
+def _min_os_version_for_arch(filename: str, arch: str) -> str:
+    output = subprocess.check_output(
+        [
+            "vtool",
+            "-arch",
+            arch,
+            "-show-build",
+            filename
+        ]
+    ).decode("utf-8")
+
+    # This is pretty nasty extraction of the vtool output, but it does crash
+    # nicely with unexpected changes in format.
+    # Originally tested against macOS 14.7.4 (23H420)
+
+    lines = output.split("\n")
+    properties = dict()
+    for line in lines[2:-1]:
+        key, value = line.split()
+        properties[key] = value
+
+    platform_version_min = [
+        "LC_VERSION_MIN_MACOSX",
+        "LC_VERSION_MIN_IPHONEOS",
+        "LC_VERSION_MIN_TVOS"
+    ]
+
+    if properties["cmd"] in platform_version_min:
+        return properties["version"]
+    elif properties["cmd"] == "LC_BUILD_VERSION":
+        return properties["minos"]
+    else:
+        raise Exception("Unable to extract minimum OS version")
+
+
+def _min_os_version(filename: str) -> str:
+    archs = subprocess.check_output(["lipo", filename, "-archs"]).split()
+
+    arch_min_os_versions = []
+
+    for arch in archs:
+        arch = arch.decode("utf-8")
+
+        arch_min_os_version = _min_os_version_for_arch(filename, arch)
+        arch_min_os_version_components = tuple(map(int, arch_min_os_version.split(".")))
+        arch_min_os_versions.append(arch_min_os_version_components)
+
+    # Pick lowest version of any arch
+    min_os_version_components = map(str, min(arch_min_os_versions))
+    min_os_version = ".".join(min_os_version_components)
+
+    return min_os_version
 
 
 def create_xcframework(
@@ -262,6 +313,13 @@ def create_xcframework(
             shutil.copyfile(
                 lib_path, framework_path / swift_module_name, follow_symlinks=False
             )
+            with open(framework_path / "Info.plist", "w") as info_plist:
+                info_plist.write(
+                    _framework_info_plist(
+                        framework_name,
+                        _min_os_version(framework_path / swift_module_name)
+                    )
+                )
 
             command.extend(["-framework", str(framework_path)])
 
