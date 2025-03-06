@@ -147,8 +147,7 @@ def create_fat_binary(
 
     rutils.run_command(command)
 
-
-def _framework_info_plist(framework_name) -> str:
+def _framework_info_plist(framework_name: str, min_os_version: str) -> str:
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -176,7 +175,7 @@ def _framework_info_plist(framework_name) -> str:
 """
 
 
-def _framework_modulemap(framework_name) -> str:
+def _framework_modulemap(framework_name: str) -> str:
     return f"""framework module {framework_name} {{
 	umbrella "."
 	export *
