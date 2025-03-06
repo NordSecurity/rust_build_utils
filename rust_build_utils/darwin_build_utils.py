@@ -261,20 +261,20 @@ def _min_os_version_for_arch(filename: str, arch: str) -> str:
 def _min_os_version(filename: str) -> str:
     archs = subprocess.check_output(["lipo", filename, "-archs"]).split()
 
-    min_os_versions = []
+    arch_min_os_versions = []
 
     for arch in archs:
         arch = arch.decode("utf-8")
 
-        min_os_versions.append(_min_os_version_for_arch(filename, arch))
+        arch_min_os_version = _min_os_version_for_arch(filename, arch)
+        arch_min_os_version_components = tuple(map(int, arch_min_os_version.split(".")))
+        arch_min_os_versions.append(arch_min_os_version_components)
 
-    # Unclear what the policy should be for fat binaries/simulator builds
-    # with different values for each arch
-    # - max for highest supported version is safe
-    # - min for lowest supported version - do not know if correct or not
-    version_policy = max
+    # Pick lowest version of any arch
+    min_os_version_components = map(str, min(arch_min_os_versions))
+    min_os_version = ".".join(min_os_version_components)
 
-    return version_policy(min_os_versions)
+    return min_os_version
 
 
 def create_xcframework(
