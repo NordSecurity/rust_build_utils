@@ -190,13 +190,17 @@ def _temp_framework_directory(
     framework_dir = Path(project.get_distribution_dir()) / f"{framework_name}.framework"
     if framework_dir.exists():
         shutil.rmtree(framework_dir)
-
     framework_dir.mkdir(parents=True)
 
-    framework_headers_dir = framework_dir / "Headers"
-    framework_modules_dir = framework_dir / "Modules"
+    framework_version_dir = framework_dir / "Versions" / "A"
+    framework_version_dir.mkdir(parents=True)
+
+    framework_headers_dir   = framework_version_dir / "Headers"
     framework_headers_dir.mkdir()
+    framework_modules_dir   = framework_version_dir / "Modules"
     framework_modules_dir.mkdir()
+    framework_resources_dir = framework_version_dir / "Resources"
+    framework_resources_dir.mkdir()
 
     for key, value in headers_directory.items():
         destination = framework_headers_dir / key
@@ -205,6 +209,9 @@ def _temp_framework_directory(
 
     with open(framework_modules_dir / "module.modulemap", "w") as modulemap:
         modulemap.write(_framework_modulemap(framework_name))
+
+    framework_current_symlink = ( framework_dir / "Versions" / "Current" )
+    os.symlink("A", framework_current_symlink, target_is_directory=True)
 
     try:
         yield framework_dir
@@ -306,17 +313,21 @@ def create_xcframework(
                 / f"{swift_module_name}.framework"
             )
 
+            framework_version_path = framework_path / "Versions" / "A"
+
             if framework_path.exists():
                 shutil.rmtree(framework_path)
             shutil.copytree(temp_framework, framework_path, symlinks=True)
             shutil.copyfile(
-                lib_path, framework_path / swift_module_name, follow_symlinks=False
+                lib_path, framework_version_path / swift_module_name, follow_symlinks=False
             )
-            with open(framework_path / "Info.plist", "w") as info_plist:
+            os.symlink(f"Versions/Current/{swift_module_name}", framework_path / swift_module_name)
+
+            with open(framework_version_path / "Resources" / "Info.plist", "w") as info_plist:
                 info_plist.write(
                     _framework_info_plist(
                         framework_name,
-                        _min_os_version(framework_path / swift_module_name)
+                        _min_os_version(framework_version_path / swift_module_name)
                     )
                 )
 
