@@ -213,6 +213,10 @@ def _temp_framework_directory(
     framework_current_symlink = ( framework_dir / "Versions" / "Current" )
     os.symlink("A", framework_current_symlink, target_is_directory=True)
 
+    os.symlink("Versions/Current/Headers",   framework_dir / "Headers", target_is_directory=True)
+    os.symlink("Versions/Current/Modules",   framework_dir / "Modules", target_is_directory=True)
+    os.symlink("Versions/Current/Resources", framework_dir / "Resources", target_is_directory=True)
+
     try:
         yield framework_dir
     finally:
