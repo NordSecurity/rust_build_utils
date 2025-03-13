@@ -356,7 +356,7 @@ def create_xcframework(
             with open(framework_info_plist_path, "w") as info_plist:
                 info_plist.write(
                     _framework_info_plist(
-                        framework_name,
+                        swift_module_name,
                         _min_os_version(framework_inner_path / swift_module_name)
                     )
                 )
