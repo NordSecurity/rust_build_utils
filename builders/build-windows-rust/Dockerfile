@@ -1,4 +1,4 @@
-FROM rust:1.77.2
+FROM rust:1.85.0
 
 ARG REVISION
 
@@ -6,9 +6,6 @@ LABEL org.opencontainers.image.source=https://github.com/NordSecurity/rust_build
 LABEL org.opencontainers.image.description="Windows Rust builder image"
 LABEL org.opencontainers.image.licenses=GPL-3.0
 LABEL org.opencontainers.image.revision=$REVISION
-
-# Download crates.io index - entire index won't have to be downloaded for each job
-RUN cargo search --limit 1
 
 ENV GO_VERSION=1.21.6 \
     GOROOT=/usr/local/go \
@@ -31,9 +28,6 @@ RUN wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz; \
     tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz; \
     rm go${GO_VERSION}.linux-amd64.tar.gz; \
     mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH";
-
-# Install `sccache`
-RUN cargo install sccache --locked --version 0.4.2 && rm -rf /usr/local/cargo/registry
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1
