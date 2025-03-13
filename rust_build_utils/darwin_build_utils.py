@@ -184,7 +184,7 @@ def _framework_modulemap(framework_name: str) -> str:
 
 
 def _min_os_version_for_arch(filename: str, arch: str) -> str:
-    output = subprocess.check_output(
+    vtool_output = subprocess.check_output(
         [
             "vtool",
             "-arch",
@@ -198,24 +198,27 @@ def _min_os_version_for_arch(filename: str, arch: str) -> str:
     # nicely with unexpected changes in format.
     # Originally tested against macOS 14.7.4 (23H420)
 
-    lines = output.split("\n")
-    properties = dict()
-    for line in lines[2:-1]:
-        key, value = line.split()
-        properties[key] = value
+    try:
+        lines = vtool_output.split("\n")
+        properties = dict()
+        for line in lines[2:-1]:
+            key, value = line.split()
+            properties[key] = value
 
-    platform_version_min = [
-        "LC_VERSION_MIN_MACOSX",
-        "LC_VERSION_MIN_IPHONEOS",
-        "LC_VERSION_MIN_TVOS"
-    ]
+        platform_version_min = [
+            "LC_VERSION_MIN_MACOSX",
+            "LC_VERSION_MIN_IPHONEOS",
+            "LC_VERSION_MIN_TVOS"
+        ]
 
-    if properties["cmd"] in platform_version_min:
-        return properties["version"]
-    elif properties["cmd"] == "LC_BUILD_VERSION":
-        return properties["minos"]
-    else:
-        raise Exception("Unable to extract minimum OS version")
+        if properties["cmd"] in platform_version_min:
+            return properties["version"]
+        elif properties["cmd"] == "LC_BUILD_VERSION":
+            return properties["minos"]
+        else:
+            raise Exception()
+    except:
+        raise Exception(f"Unable to extract minimum OS version from vtool output: \n'{vtool_output}'")
 
 
 def _min_os_version(filename: str) -> str:
