@@ -100,9 +100,9 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         "archs": {
             "x86_64": {
                 "rust_target": "x86_64-apple-darwin",
-                "deployment_assert": ("LC_VERSION_MIN_MACOSX", "version", "10.7"),
+                "deployment_assert": ("LC_VERSION_MIN_MACOSX", "version", "10.12"),
                 "env": {
-                    "MACOSX_DEPLOYMENT_TARGET": (["10.7"], "set"),
+                    "MACOSX_DEPLOYMENT_TARGET": (["10.12"], "set"),
                 },
             },
             "aarch64": {
