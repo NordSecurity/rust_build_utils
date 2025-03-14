@@ -1,4 +1,4 @@
-FROM rust:1.77.2
+FROM rust:1.85.0
 
 ARG REVISION
 
@@ -51,9 +51,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         libssl-dev pkg-config \
         python3-requests && \
     rm -rf /var/lib/apt/lists/*
-
-# Install `sccache`
-RUN cargo install sccache --locked --version 0.4.2
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1
