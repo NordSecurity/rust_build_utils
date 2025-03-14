@@ -15,7 +15,6 @@ ENV NDKVERSION="r26"
 ENV NDKZIPNAME="android-ndk-$NDKVERSION-$BUILDOS.zip"
 ENV NDKZIP="https://dl.google.com/android/repository/$NDKZIPNAME"
 ENV TOOLCHAIN="$ANDROIDNDK/android-ndk-$NDKVERSION/toolchains/llvm/prebuilt/linux-x86_64"
-ENV SCCACHE_TAG=0.10.0
 
 # Used for .cargo/config
 ENV PATH="$TOOLCHAIN/bin:$PATH"
@@ -52,9 +51,6 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
         libssl-dev pkg-config \
         python3-requests && \
     rm -rf /var/lib/apt/lists/*
-
-# Install `sccache`
-RUN cargo install sccache --locked --version "${SCCACHE_TAG}"
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1

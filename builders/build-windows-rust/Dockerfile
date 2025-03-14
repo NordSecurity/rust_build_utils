@@ -14,7 +14,6 @@ ENV GO_VERSION=1.21.6 \
     GOROOT=/usr/local/go \
     GOPATH=/go \
     PATH=/go/bin:/usr/local/go/bin:$PATH
-ENV SCCACHE_TAG=0.10.0
 
 RUN set -eux; \
     apt-get update; \
@@ -33,8 +32,7 @@ RUN wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz; \
     rm go${GO_VERSION}.linux-amd64.tar.gz; \
     mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 777 "$GOPATH";
 
-# Install `sccache`
-RUN cargo install sccache --locked --version "${SCCACHE_TAG}" && rm -rf /usr/local/cargo/registry
+RUN rm -rf /usr/local/cargo/registry
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1
