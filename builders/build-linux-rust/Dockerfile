@@ -13,7 +13,7 @@ COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cpp /bin
 
 ENV QDK_TAG=v2.3.14
-ENV SCCACHE_TAG=0.4.2
+ENV SCCACHE_TAG=0.10.0
 
 # Multilib is not present in an arm64 debian but is used by libtelio
 RUN set -eux; \
