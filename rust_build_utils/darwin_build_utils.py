@@ -147,6 +147,7 @@ def create_fat_binary(
 
     rutils.run_command(command)
 
+
 def _framework_info_plist(framework_name: str, min_os_version: str) -> str:
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -185,13 +186,7 @@ def _framework_modulemap(framework_name: str) -> str:
 
 def _min_os_version_for_arch(filename: str, arch: str) -> str:
     vtool_output = subprocess.check_output(
-        [
-            "vtool",
-            "-arch",
-            arch,
-            "-show-build",
-            filename
-        ]
+        ["vtool", "-arch", arch, "-show-build", filename]
     ).decode("utf-8")
 
     # This is pretty nasty extraction of the vtool output, but it does crash
@@ -208,7 +203,7 @@ def _min_os_version_for_arch(filename: str, arch: str) -> str:
         platform_version_min = [
             "LC_VERSION_MIN_MACOSX",
             "LC_VERSION_MIN_IPHONEOS",
-            "LC_VERSION_MIN_TVOS"
+            "LC_VERSION_MIN_TVOS",
         ]
 
         if properties["cmd"] in platform_version_min:
@@ -218,7 +213,9 @@ def _min_os_version_for_arch(filename: str, arch: str) -> str:
         else:
             raise Exception()
     except:
-        raise Exception(f"Unable to extract minimum OS version from vtool output: \n'{vtool_output}'")
+        raise Exception(
+            f"Unable to extract minimum OS version from vtool output: \n'{vtool_output}'"
+        )
 
 
 def _min_os_version(filename: str) -> str:
@@ -227,9 +224,9 @@ def _min_os_version(filename: str) -> str:
     arch_min_os_versions = []
 
     for arch in archs:
-        arch = arch.decode("utf-8")
+        arch_str = arch.decode("utf-8")
 
-        arch_min_os_version = _min_os_version_for_arch(filename, arch)
+        arch_min_os_version = _min_os_version_for_arch(filename, arch_str)
         arch_min_os_version_components = tuple(map(int, arch_min_os_version.split(".")))
         arch_min_os_versions.append(arch_min_os_version_components)
 
@@ -296,7 +293,9 @@ def create_xcframework(
         # fix @rpath to relative one since the absolute is embedded at this point
 
         if versioned_framework:
-            id_dylib = f"@rpath/{swift_module_name}.framework/Versions/A/{swift_module_name}"
+            id_dylib = (
+                f"@rpath/{swift_module_name}.framework/Versions/A/{swift_module_name}"
+            )
         else:
             id_dylib = f"@rpath/{swift_module_name}.framework/{swift_module_name}"
 
@@ -328,16 +327,33 @@ def create_xcframework(
             framework_current_symlink = framework_path / "Versions" / "Current"
             os.symlink("A", framework_current_symlink, target_is_directory=True)
 
-            os.symlink("Versions/Current/Headers",   framework_path / "Headers",   target_is_directory=True)
-            os.symlink("Versions/Current/Modules",   framework_path / "Modules",   target_is_directory=True)
-            os.symlink("Versions/Current/Resources", framework_path / "Resources", target_is_directory=True)
+            os.symlink(
+                "Versions/Current/Headers",
+                framework_path / "Headers",
+                target_is_directory=True,
+            )
+            os.symlink(
+                "Versions/Current/Modules",
+                framework_path / "Modules",
+                target_is_directory=True,
+            )
+            os.symlink(
+                "Versions/Current/Resources",
+                framework_path / "Resources",
+                target_is_directory=True,
+            )
 
-            os.symlink(f"Versions/Current/{swift_module_name}", framework_path / swift_module_name)
+            os.symlink(
+                f"Versions/Current/{swift_module_name}",
+                framework_path / swift_module_name,
+            )
 
         # Generate Info.plist
 
         if versioned_framework:
-            framework_info_plist_path = framework_inner_path / "Resources" / "Info.plist"
+            framework_info_plist_path = (
+                framework_inner_path / "Resources" / "Info.plist"
+            )
         else:
             framework_info_plist_path = framework_inner_path / "Info.plist"
 
@@ -345,7 +361,7 @@ def create_xcframework(
             info_plist.write(
                 _framework_info_plist(
                     swift_module_name,
-                    _min_os_version(framework_inner_path / swift_module_name)
+                    _min_os_version(str(framework_inner_path / swift_module_name)),
                 )
             )
 
@@ -354,6 +370,7 @@ def create_xcframework(
     command.extend(["-output", str(xcframework_path)])
 
     rutils.run_command(command)
+
 
 def get_sdk_path(target_os: str) -> Path:
     sdk = {
