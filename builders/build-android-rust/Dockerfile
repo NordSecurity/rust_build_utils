@@ -1,4 +1,4 @@
-FROM rust:1.77.2
+FROM rust:1.85.0
 
 ARG REVISION
 
@@ -42,18 +42,12 @@ RUN \
     rustup target add armv7-linux-androideabi && \
     rustup target add aarch64-linux-android
 
-# Download crates.io index - entire index won't have to be downloaded for each job
-RUN cargo search --limit 1
-
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
         pip \
         libssl-dev pkg-config \
         python3-requests && \
     rm -rf /var/lib/apt/lists/*
-
-# Install `sccache`
-RUN cargo install sccache --locked --version 0.4.2
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1

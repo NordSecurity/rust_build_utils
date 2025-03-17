@@ -1,4 +1,4 @@
-FROM rust:1.77.2-bullseye
+FROM rust:1.85.0-bullseye
 
 ARG REVISION
 
@@ -13,7 +13,6 @@ COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.25.0-8 /bin/uniffi-bindgen-cpp /bin
 
 ENV QDK_TAG=v2.3.14
-ENV SCCACHE_TAG=0.4.2
 
 # Multilib is not present in an arm64 debian but is used by libtelio
 RUN set -eux; \
@@ -64,12 +63,6 @@ RUN rustup target add \
         arm-unknown-linux-gnueabi
 
 RUN rustup component add clippy rustfmt
-
-# Download crates.io index - entire index won't have to be downloaded for each job
-RUN cargo search --limit 1
-
-# Install `sccache`
-RUN cargo install sccache --locked --version "${SCCACHE_TAG}"
 
 # Install QDK framework for QNAP packages (QPKG)
 RUN set -eux; \
