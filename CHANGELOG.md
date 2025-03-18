@@ -1,5 +1,8 @@
 # Release notes
 
+## 5.0.0
+- Rust tool-chain version updated to 1.85.0
+
 ## 3.3.0
 - build-linux-rust and build-linux-rust are now built also for linux/arm64
 
