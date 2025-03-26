@@ -16,9 +16,6 @@ PackageList = Dict[str, Dict[str, str]]
 LIPO_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 XCFRAMEWORK_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 
-RUST_NIGHTLY_VERSION = "2025-03-25"
-
-
 @dataclass
 class CargoConfig:
     """Arch 'arm64' (eg. the macos arch on arm) will be replaced with 'aarch64'."""
@@ -299,25 +296,13 @@ def parse_cli():
 def _build_packages(
     config, packages: List[str], extra_args: Optional[List[str]], subcommand: str
 ) -> None:
-    if "tvos" in config.target_os:
-        args = [
-            "cargo",
-            f"+nightly-{RUST_NIGHTLY_VERSION}",
-            "build",
-            "--verbose",
-            "-Z",
-            "build-std",
-            "--target",
-            config.rust_target,
-        ]
-    else:
-        args = [
-            "cargo",
-            subcommand,
-            "--verbose",
-            "--target",
-            config.rust_target,
-        ]
+    args = [
+        "cargo",
+        subcommand,
+        "--verbose",
+        "--target",
+        config.rust_target,
+    ]
 
     if not config.debug:
         args.append("--release")
@@ -393,23 +378,9 @@ def _cargo(
         shutil.rmtree(distribution_dir)
     os.makedirs(distribution_dir)
 
-    if "tvos" in config.target_os:
-        run_command(
-            ["rustup", "toolchain", "install", f"nightly-{RUST_NIGHTLY_VERSION}"]
-        )
-        run_command(
-            [
-                "rustup",
-                "component",
-                "add",
-                "rust-src",
-                "--toolchain",
-                f"nightly-{RUST_NIGHTLY_VERSION}",
-            ]
-        )
-    else:
-        run_command(["rustup", "default", project.rust_version])
-        run_command(["rustup", "target", "add", config.rust_target])
+
+    run_command(["rustup", "default", project.rust_version])
+    run_command(["rustup", "target", "add", config.rust_target])
 
     msvc_context = None
     if config.rust_target.endswith("-msvc") and not is_msvc_active():
