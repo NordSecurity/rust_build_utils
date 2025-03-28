@@ -60,6 +60,7 @@ RUN rustup target add \
         i686-unknown-linux-gnu \
         armv7-unknown-linux-gnueabihf \
         aarch64-unknown-linux-gnu \
+        aarch64-unknown-linux-musl \
         arm-unknown-linux-gnueabi
 
 RUN rustup component add clippy rustfmt
