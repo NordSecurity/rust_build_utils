@@ -78,7 +78,7 @@ GLOBAL_CONFIG: Dict[str, Any] = {
             },
             "aarch64": {
                 "strip_path": "/usr/aarch64-linux-gnu/bin/objcopy",
-                "rust_target": "aarch64-unknown-linux-gnu",
+                "rust_target": "aarch64-unknown-linux-musl",
             },
         },
         "post_build": ["rust_build_utils.linux_build_utils.strip"],
