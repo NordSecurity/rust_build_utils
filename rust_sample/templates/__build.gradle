@@ -54,6 +54,10 @@ android {
         targetCompatibility JavaVersion.VERSION_11
     }
 
+    lintOptions {
+        abortOnError false
+    }
+
     namespace "com.nordsec.rust_sample"
 }
 
