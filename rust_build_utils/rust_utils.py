@@ -256,6 +256,12 @@ def create_cli_parser() -> Any:
         help="Path to init.gradle template to be used instead of the default one",
         required=False,
     )
+    aar_parser.add_argument(
+        "--lint_baseline_path",
+        type=str,
+        help="Path to lint-baseline.xml template to be used instead of the default one",
+        required=False,
+    )
 
     ios_sim_parser = subparsers.add_parser(
         "build-ios-simulator-stubs",
