@@ -1,5 +1,8 @@
 # Release notes
 
+## 5.1.0
+- Bump uniffi to 0.28.3
+
 ## 5.0.0
 - Rust tool-chain version updated to 1.85.0
 

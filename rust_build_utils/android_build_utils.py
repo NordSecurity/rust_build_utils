@@ -71,6 +71,7 @@ def _generate_aar(
     settings_gradle_path: Optional[str],
     build_gradle_path: Optional[str],
     init_gradle_path: Optional[str],
+    lint_baseline_path: Optional[str],
 ):
     if version.startswith("v"):
         version = version[len("v") :]
@@ -98,6 +99,11 @@ def _generate_aar(
         "ARTIFACT_ID": artifact_id,
         "VERSION": version,
     }
+
+    if lint_baseline_path:
+        shutil.copyfile(lint_baseline_path, f"{out_dir}/lint-baseline.xml")
+    else:
+        open(f"{out_dir}/lint-baseline.xml", "w")
     if build_gradle_path:
         gradle_template = build_gradle_path
     else:
@@ -149,4 +155,5 @@ def generate_aar(project: rutils.Project, args):
         args.settings_gradle_path,
         args.build_gradle_path,
         args.init_gradle_path,
+        args.lint_baseline_path,
     )
