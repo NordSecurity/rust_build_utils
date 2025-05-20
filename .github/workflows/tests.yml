@@ -143,7 +143,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs: test-build-docker
     container:
-      image: 'ghcr.io/nordsecurity/package-aar:v0.0.2'
+      image: 'ghcr.io/nordsecurity/package-aar-jdk-17:v0.1.0'
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}

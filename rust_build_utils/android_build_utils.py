@@ -105,7 +105,7 @@ def _generate_aar(
             script_dir, "..", "aar_templates", "__build.gradle"
         )
     gradle_processed = os.path.join(main_dir, "build.gradle")
-
+    print(f"Using gradle template: {gradle_template}")
     _process_template(gradle_template, gradle_processed, gradle_dict)
 
     internal_main_dir = os.path.join(main_dir, "src", "main")
