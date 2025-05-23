@@ -1,7 +1,18 @@
+import enum
 from typing import Dict, Any
 
 NDK_IMAGE_PATH = "/source/.build"
 NDK_VERSION = "r26"
+
+
+class WindowsLinkingMethod(enum.Enum):
+    """C runtime linked statically"""
+
+    STATIC = 1
+    """C runtime linked dynamically"""
+    DYNAMIC = 2
+
+
 # This is the global configuration file that will be used for most Rust projects, only apply changes which are needed for all projects.
 
 # Every single OS has this general structure:
@@ -201,4 +212,9 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
+}
+
+WINDOWS_RUNTIME_LINKING = {
+    WindowsLinkingMethod.STATIC: " -C target-feature=+crt-static ",
+    WindowsLinkingMethod.DYNAMIC: " -C target-feature=-crt-static ",
 }
