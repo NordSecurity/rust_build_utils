@@ -7,6 +7,7 @@ PROJECT_ROOT = str(Path(__file__).resolve().parent.parent)
 # `sys.path` is the equivalent of `PYTHONPATH`, aka module search paths
 sys.path += [f"{PROJECT_ROOT}/.."]
 import rust_build_utils.rust_utils as rutils
+import rust_build_utils.msvc as msvc
 from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 import rust_build_utils.darwin_build_utils as dbu
 import rust_build_utils.android_build_utils as abu
@@ -18,6 +19,11 @@ PROJECT_CONFIG = rutils.Project(
     working_dir=None,
 )
 
+WINDOWS_RUNTIME_LINKING = {
+    "static": " -C target-feature=+crt-static ",
+    "dynamic": " -C target-feature=-crt-static ",
+}
+
 
 def pre_function(config):
     print("This happens before anything else")
@@ -25,6 +31,36 @@ def pre_function(config):
 
 def post_function(config, packages):
     print(f"Built packages: {list(packages.keys())}")
+
+
+def post_function_win(config, args):
+    packages = SAMPLE_CONFIG[config.target_os].get("packages", None)
+    if packages and config.target_os == "windows":
+        for _, bins in packages.items():
+            for _, bin in bins.items():
+                dll_bin = os.path.splitext(bin)[0] + ".dll"
+                dll_bin_path = PROJECT_CONFIG.get_cargo_path(
+                    config.rust_target, dll_bin, config.debug
+                )
+                if os.path.isfile(dll_bin_path):
+                    should_link_statically = (
+                        WINDOWS_RUNTIME_LINKING["static"]
+                        in GLOBAL_CONFIG["windows"]["env"]["RUSTFLAGS"]
+                    )
+                    msvc_context = None
+                    if not msvc.is_msvc_active():
+                        msvc_context = msvc.activate_msvc(
+                            "amd64" if config.arch == "x86_64" else config.arch
+                        )
+                    res = msvc.check_for_static_runtime(
+                        Path(dll_bin_path), should_link_statically
+                    )
+                    if msvc_context is not None:
+                        msvc.deactivate_msvc(msvc_context)
+                    if not res:
+                        print("Incorrect windows runtime linking")
+                        exit(1)
+                    print("Runtime linking for windows is correct!")
 
 
 """
@@ -139,7 +175,11 @@ SAMPLE_CONFIG = {
                 "rust-sample-lib": "rust_sample_lib.dll",
             },
         },
+        "env": {
+            "RUSTFLAGS": (WINDOWS_RUNTIME_LINKING["static"], "set"),
+        },
         "pre_build": [pre_function],
+        "post_build": [post_function, post_function_win],
         "build_func": rutils.cargo_rustc,
     },
     "android": {
