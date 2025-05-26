@@ -1,5 +1,6 @@
 import os
 import re
+import shutil
 import subprocess
 from pathlib import Path
 from typing import Optional
@@ -177,6 +178,93 @@ def activate_msvc(
             original_env[env_var] = env_old_val
             os.environ[env_var] = env_new_val
     return original_env
+
+
+def check_for_static_runtime(dll_path: Path, should_link_statically: bool) -> bool:
+    """Checks a DLL for dynamic dependencies on common C/C++ runtime libraries using dumpbin.exe."""
+
+    if not is_msvc_active():
+        print("Please activate MSVC shell")
+        return False
+
+    if not os.path.isfile(dll_path):
+        return False
+
+    dumpbin_exe = shutil.which("dumpbin.exe")
+    if not dumpbin_exe:
+        print("dumpbin.exe not found in your PATH.")
+        print(
+            "Please run this script from a Developer Command Prompt for Visual Studio,"
+        )
+        print(
+            "or ensure dumpbin.exe (from Visual Studio Build Tools) is accessible via your system's PATH."
+        )
+        return False
+
+    try:
+        process = subprocess.run(
+            [dumpbin_exe, "/dependents", dll_path],
+            capture_output=True,
+            text=True,
+            check=False,  # We will check returncode manually
+            encoding="oem",  # Try OEM codepage first for console tools
+            errors="replace",  # Replace characters that cannot be decoded
+        )
+    except FileNotFoundError:  # Should be caught by shutil.which, but as a fallback
+        print(
+            f"Failed to execute dumpbin.exe. Ensure it's correctly located at {dumpbin_exe}."
+        )
+        return False
+    except Exception as e:
+        print(f"An unexpected error occurred while trying to run dumpbin.exe: {e}")
+        return False
+
+    dumpbin_output_text = process.stdout
+    dumpbin_error_pattern = r"LINK : fatal error|Error opening file|invalid or corrupt file|cannot open input file"
+    if process.returncode != 0 or re.search(
+        dumpbin_error_pattern, dumpbin_output_text, re.IGNORECASE
+    ):
+        print(
+            f"dumpbin.exe encountered an error while processing '{os.path.basename(dll_path)}'."
+        )
+        print("dumpbin output (first 20 lines):")
+        for i, line in enumerate(dumpbin_output_text.splitlines()):
+            if i >= 20:
+                print("  ... (output truncated)")
+                break
+            print(f"  {line}")
+        return False
+
+    dependencies = set()  # Use a set to automatically handle duplicates
+    dependency_regex = re.compile(r"^\s+(?P<dll_filename>[a-zA-Z0-9_.\-]+\.dll)$")
+    for line in dumpbin_output_text.splitlines():
+        match = dependency_regex.match(line)
+        if match:
+            dependencies.add(match.group("dll_filename"))
+
+    sorted_dependencies = sorted(list(dependencies))
+
+    # VCRUNTIME.dll, VCRUNTIME140.dll, VCRUNTIME140_1.dll etc.
+    vcruntime_pattern = re.compile(r"^VCRUNTIME\d*(_\d+)?\.DLL$", re.IGNORECASE)
+    # MSVCR100.dll, MSVCR120.dll etc. (legacy)
+    msvcrt_pattern = re.compile(r"^MSVCR\d+\.DLL$", re.IGNORECASE)
+    # UCRTBASE.dll
+    ucrtbase_pattern = re.compile(r"^UCRTBASE\.DLL$", re.IGNORECASE)
+
+    found_runtime_dependencies = []
+    for dep in sorted_dependencies:
+        if (
+            vcruntime_pattern.match(dep)
+            or msvcrt_pattern.match(dep)
+            or ucrtbase_pattern.match(dep)
+        ):
+            found_runtime_dependencies.append(dep)
+
+    links_statically = len(found_runtime_dependencies) == 0
+    if links_statically != should_link_statically:
+        return False
+
+    return True
 
 
 def deactivate_msvc(env: dict[str, Optional[str]]):
