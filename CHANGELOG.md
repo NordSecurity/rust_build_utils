@@ -1,5 +1,11 @@
 # Release notes
 
+## 6.0.2
+- Bump uniffi generators to v0.28.3-3
+
+## 6.0.1
+- Windows static C runtime check
+
 ## 6.0.0
 - Bump uniffi to 0.28.3
 
