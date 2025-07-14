@@ -28,6 +28,25 @@ RUN apt-get update && apt-get install -y \
         unzip \
         wget \
     && rm -rf /var/lib/apt/lists/*
+    
+RUN ARCH=$(uname -m) && \
+    case $ARCH in \
+        x86_64) \
+            PROTOC_ARCH="x86_64" && \
+            CHECKSUM="96553041f1a91ea0efee963cb16f462f5985b4d65365f3907414c360044d8065" ;; \
+        aarch64|arm64) \
+            PROTOC_ARCH="aarch_64" && \
+            CHECKSUM="6c554de11cea04c56ebf8e45b54434019b1cd85223d4bbd25c282425e306ecc2" ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -LO "https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-linux-${PROTOC_ARCH}.zip" && \
+    echo "${CHECKSUM}  protoc-31.1-linux-${PROTOC_ARCH}.zip" | sha256sum -c - && \
+    mkdir -p /root/.local && \
+    unzip "protoc-31.1-linux-${PROTOC_ARCH}.zip" -d /root/.local && \
+    rm "protoc-31.1-linux-${PROTOC_ARCH}.zip"
+
+ENV PATH="$PATH:/root/.local/bin"
+
 ENV ANDROID_SDK_CHECKSUM 8919e8752979db73d8321e9babe2caedcc393750817c1a5f56c128ec442fb540
 RUN wget --output-document=android-sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_TOOLS}_latest.zip && \
     echo "${ANDROID_SDK_CHECKSUM} android-sdk.zip" | sha256sum --check && \

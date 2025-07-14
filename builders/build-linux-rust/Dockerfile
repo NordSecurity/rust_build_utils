@@ -54,6 +54,24 @@ RUN set -eux; \
         /usr/share/doc/ \
         /usr/share/man/
 
+RUN ARCH=$(uname -m) && \
+    case $ARCH in \
+        x86_64) \
+            PROTOC_ARCH="x86_64" && \
+            CHECKSUM="96553041f1a91ea0efee963cb16f462f5985b4d65365f3907414c360044d8065" ;; \
+        aarch64|arm64) \
+            PROTOC_ARCH="aarch_64" && \
+            CHECKSUM="6c554de11cea04c56ebf8e45b54434019b1cd85223d4bbd25c282425e306ecc2" ;; \
+        *) echo "Unsupported architecture: $ARCH" && exit 1 ;; \
+    esac && \
+    curl -LO "https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-linux-${PROTOC_ARCH}.zip" && \
+    echo "${CHECKSUM}  protoc-31.1-linux-${PROTOC_ARCH}.zip" | sha256sum -c - && \
+    mkdir -p /root/.local && \
+    unzip "protoc-31.1-linux-${PROTOC_ARCH}.zip" -d /root/.local && \
+    rm "protoc-31.1-linux-${PROTOC_ARCH}.zip"
+
+ENV PATH="$PATH:/root/.local/bin"
+
 RUN rustup target add \
         x86_64-unknown-linux-gnu \
         x86_64-unknown-linux-musl \
