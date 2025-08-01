@@ -29,6 +29,7 @@ RUN set -eux; \
         /usr/share/doc/ \
         /usr/share/man/
 
+        
 RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update; \
@@ -47,8 +48,13 @@ RUN set -eux; \
         musl-tools \
         pip \
         python3-requests \
-        pkg-config; \
-        rm -rf /var/lib/apt/lists/* \
+        pkg-config \
+        # OpenWRT dependencies below
+        zstd build-essential clang flex bison g++ gawk \
+        gettext git libncurses5-dev \
+        python3-setuptools rsync swig unzip zlib1g-dev file wget \
+    ; \
+    rm -rf /var/lib/apt/lists/* \
         /var/cache/apt/* \
         /var/log/* \
         /usr/share/doc/ \
@@ -93,6 +99,17 @@ RUN set -eux; \
         /var/cache/apt/* /var/log/* \
         /usr/share/doc/ \
         /usr/share/man/
+
+
+# Download and extract OpenWRT SDK
+RUN set -eux; \
+    SDK_FILENAME="openwrt-sdk-24.10.1-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst"; \
+    SDK_URL="https://downloads.openwrt.org/releases/24.10.1/targets/x86/64/$SDK_FILENAME"; \
+    mkdir -p /usr/local/openwrt_sdk_x86_64; \
+    curl -LO "$SDK_URL"; \
+    zstd -dc "$SDK_FILENAME" | tar --strip-components=1 -xf - -C /usr/local/openwrt_sdk_x86_64; \
+    rm "$SDK_FILENAME"
+
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1

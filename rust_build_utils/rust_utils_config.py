@@ -81,6 +81,12 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         },
         "post_build": ["rust_build_utils.linux_build_utils.strip"],
     },
+    "openwrt": {
+        "archs": {
+            "x86_64": {},
+        },
+        "post_build": [],
+    },
     "qnap": {
         "archs": {
             "x86_64": {
