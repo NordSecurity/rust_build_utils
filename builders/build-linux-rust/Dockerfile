@@ -101,13 +101,21 @@ RUN set -eux; \
         /usr/share/man/
 
 
-# Download and extract OpenWRT SDK
+# Download and extract OpenWRT SDKs
 RUN set -eux; \
     SDK_FILENAME="openwrt-sdk-24.10.1-x86-64_gcc-13.3.0_musl.Linux-x86_64.tar.zst"; \
     SDK_URL="https://downloads.openwrt.org/releases/24.10.1/targets/x86/64/$SDK_FILENAME"; \
     mkdir -p /usr/local/openwrt_sdk_x86_64; \
     curl -LO "$SDK_URL"; \
     zstd -dc "$SDK_FILENAME" | tar --strip-components=1 -xf - -C /usr/local/openwrt_sdk_x86_64; \
+    rm "$SDK_FILENAME"
+
+RUN set -eux; \
+    SDK_FILENAME="openwrt-sdk-24.10.1-ramips-mt7621_gcc-13.3.0_musl.Linux-x86_64.tar.zst"; \
+    SDK_URL="https://downloads.openwrt.org/releases/24.10.1/targets/ramips/mt7621/$SDK_FILENAME"; \
+    mkdir -p /usr/local/openwrt_sdk_ramips_mt7621; \
+    curl -LO "$SDK_URL"; \
+    zstd -dc "$SDK_FILENAME" | tar --strip-components=1 -xf - -C /usr/local/openwrt_sdk_ramips_mt7621; \
     rm "$SDK_FILENAME"
 
 
