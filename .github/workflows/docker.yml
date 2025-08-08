@@ -20,6 +20,7 @@ on:
         - openwrt-armv7
         - openwrt-armv8
         - openwrt-ramips-mt7621
+        - test-nudler-nordvpn
       version:
         type: string
         required: true
@@ -85,6 +86,7 @@ jobs:
           - openwrt-armv7
           - openwrt-armv8
           - openwrt-ramips-mt7621
+          - test-nudler-nordvpn
     runs-on: ubuntu-22.04
     permissions:
       packages: write
