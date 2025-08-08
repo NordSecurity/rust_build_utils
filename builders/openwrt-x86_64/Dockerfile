@@ -7,8 +7,6 @@ LABEL org.opencontainers.image.description="OpenWRT builder image for x86_64"
 LABEL org.opencontainers.image.licenses=GPL-3.0
 LABEL org.opencontainers.image.revision=$REVISION
 
-USER root
-
 RUN ARCH=$(uname -m) && \
     case $ARCH in \
         x86_64) \
@@ -21,13 +19,11 @@ RUN ARCH=$(uname -m) && \
     esac && \
     curl -LO "https://github.com/protocolbuffers/protobuf/releases/download/v31.1/protoc-31.1-linux-${PROTOC_ARCH}.zip" && \
     echo "${CHECKSUM}  protoc-31.1-linux-${PROTOC_ARCH}.zip" | sha256sum -c - && \
-    mkdir -p /root/.local && \
-    unzip "protoc-31.1-linux-${PROTOC_ARCH}.zip" -d /root/.local && \
+    mkdir -p /builder/.local && \
+    unzip "protoc-31.1-linux-${PROTOC_ARCH}.zip" -d /builder/.local && \
     rm "protoc-31.1-linux-${PROTOC_ARCH}.zip"
 
-ENV PATH="$PATH:/root/.local/bin"
+ENV PATH="$PATH:/builder/.local/bin"
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1
-
-USER buildbot
