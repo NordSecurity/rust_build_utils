@@ -1,5 +1,8 @@
 # Release notes
 
+## 6.3.0
+- Rust tool-chain version updated to 1.89.0
+
 ## 6.0.2
 - Bump uniffi generators to v0.28.3-3
 

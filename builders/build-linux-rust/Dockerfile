@@ -1,4 +1,4 @@
-FROM rust:1.85.0-bullseye
+FROM rust:1.89.0-bullseye
 
 ARG REVISION
 
