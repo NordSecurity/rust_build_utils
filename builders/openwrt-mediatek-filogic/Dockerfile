@@ -1,9 +1,9 @@
-FROM openwrt/sdk:armsr-armv8-24.10.2
+FROM openwrt/sdk:mediatek-filogic-24.10.1
 
 ARG REVISION
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/rust_build_utils
-LABEL org.opencontainers.image.description="OpenWRT builder image for armsr-armv8"
+LABEL org.opencontainers.image.description="OpenWRT builder image for mediatek-filogic (OpenWRT One)"
 LABEL org.opencontainers.image.licenses=GPL-3.0
 LABEL org.opencontainers.image.revision=$REVISION
 

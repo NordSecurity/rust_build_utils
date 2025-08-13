@@ -17,9 +17,8 @@ on:
         - package-aar
         - package-aar-jdk-17
         - openwrt-x86_64
-        - openwrt-armv7
-        - openwrt-armv8
         - openwrt-ramips-mt7621
+        - openwrt-mediatek-filogic
       version:
         type: string
         required: true
@@ -82,9 +81,9 @@ jobs:
           - package-aar
           - package-aar-jdk-17
           - openwrt-x86_64
-          - openwrt-armv7
-          - openwrt-armv8
           - openwrt-ramips-mt7621
+          - openwrt-mediatek-filogic
+
     runs-on: ubuntu-22.04
     permissions:
       packages: write
