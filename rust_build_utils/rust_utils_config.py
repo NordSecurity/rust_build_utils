@@ -98,12 +98,15 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         "archs": {
             "x86_64": {
                 "rust_target": "x86_64-pc-windows-msvc",
+                "env": {"RUSTFLAGS": (f"-C control-flow-guard", "set")},
             },
             "i686": {
                 "rust_target": "i686-pc-windows-msvc",
+                "env": {"RUSTFLAGS": (f"-C control-flow-guard", "set")},
             },
             "aarch64": {
                 "rust_target": "aarch64-pc-windows-msvc",
+                "env": {"RUSTFLAGS": (f"-C control-flow-guard", "set")},
             },
         },
     },
