@@ -19,6 +19,7 @@ on:
         - openwrt-x86_64
         - openwrt-ramips-mt7621
         - openwrt-mediatek-filogic
+        - test-nudler-nordvpn
       version:
         type: string
         required: true
@@ -84,6 +85,7 @@ jobs:
           - openwrt-ramips-mt7621
           - openwrt-mediatek-filogic
 
+          - test-nudler-nordvpn
     runs-on: ubuntu-22.04
     permissions:
       packages: write
