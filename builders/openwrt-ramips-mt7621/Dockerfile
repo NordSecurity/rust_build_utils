@@ -27,3 +27,6 @@ ENV PATH="$PATH:/builder/.local/bin"
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1
+
+# Pin Rust 1.89
+RUN echo 'src-git packages https://git.openwrt.org/feed/packages.git^10862df850ae012b34ec9c57a9005b1f7e1e2aca' >> /builder/feeds.conf
