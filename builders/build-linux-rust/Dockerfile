@@ -78,21 +78,9 @@ RUN rustup target add \
         i686-unknown-linux-gnu \
         armv7-unknown-linux-gnueabihf \
         aarch64-unknown-linux-gnu \
-        aarch64-unknown-linux-musl \
         arm-unknown-linux-gnueabi
 
 RUN rustup component add clippy rustfmt
-
-# Install QDK framework for QNAP packages (QPKG)
-RUN set -eux; \
-    export DEBIAN_FRONTEND=noninteractive; \
-    git clone https://github.com/qnap-dev/QDK.git --branch "${QDK_TAG}"; \
-    cd QDK && ./InstallToUbuntu.sh install && cd -; \
-    rm -rf QDK \
-        /var/lib/apt/lists/* \
-        /var/cache/apt/* /var/log/* \
-        /usr/share/doc/ \
-        /usr/share/man/
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1
