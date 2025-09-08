@@ -33,6 +33,7 @@ RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update; \
     apt-get install -y \
+        cmake \
         # `g++-*` is used by libnudler
         g++-aarch64-linux-gnu \
         g++-arm-linux-gnueabi \

@@ -44,6 +44,7 @@ RUN \
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        cmake \
         pip \
         libssl-dev pkg-config \
         python3-requests && \
