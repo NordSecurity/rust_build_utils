@@ -43,6 +43,7 @@ RUN set -eux; \
         gcc-arm-linux-gnueabi \
         gcc-arm-linux-gnueabihf \
         gcc-i686-linux-gnu \
+        libclang-dev \
         libssl-dev \
         musl-dev \
         musl-tools \
