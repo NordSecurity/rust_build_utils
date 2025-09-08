@@ -13,6 +13,13 @@ class WindowsLinkingMethod(enum.Enum):
     DYNAMIC = 2
 
 
+WINDOWS_CONTROL_FLOW_GUARD = " -C control-flow-guard "
+WINDOWS_RUNTIME_LINKING = {
+    WindowsLinkingMethod.STATIC: " -C target-feature=+crt-static ",
+    WindowsLinkingMethod.DYNAMIC: " -C target-feature=-crt-static ",
+}
+
+
 # This is the global configuration file that will be used for most Rust projects, only apply changes which are needed for all projects.
 
 # Every single OS has this general structure:
@@ -85,17 +92,15 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         "archs": {
             "x86_64": {
                 "rust_target": "x86_64-pc-windows-msvc",
-                "env": {"RUSTFLAGS": (f"-C control-flow-guard", "set")},
             },
             "i686": {
                 "rust_target": "i686-pc-windows-msvc",
-                "env": {"RUSTFLAGS": (f"-C control-flow-guard", "set")},
             },
             "aarch64": {
                 "rust_target": "aarch64-pc-windows-msvc",
-                "env": {"RUSTFLAGS": (f"-C control-flow-guard", "set")},
             },
         },
+        "env": {"RUSTFLAGS": (f"{WINDOWS_CONTROL_FLOW_GUARD}", "set")},
     },
     "macos": {
         "archs": {
@@ -202,9 +207,4 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         "pre_build": ["rust_build_utils.darwin_build_utils.set_sdk"],
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
-}
-
-WINDOWS_RUNTIME_LINKING = {
-    WindowsLinkingMethod.STATIC: " -C target-feature=+crt-static ",
-    WindowsLinkingMethod.DYNAMIC: " -C target-feature=-crt-static ",
 }
