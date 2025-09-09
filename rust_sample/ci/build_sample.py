@@ -215,7 +215,7 @@ def main() -> None:
         exec_build(args)
     elif args.command == "bindings":
         rutils.generate_uniffi_bindings(
-            PROJECT_CONFIG, "v0.28.3-3", ["python"], "src/sample.udl"
+            PROJECT_CONFIG, "v0.28.3-4", ["python"], "src/sample.udl"
         )
     elif args.command == "lipo":
         exec_lipo(args)

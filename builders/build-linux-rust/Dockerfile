@@ -7,10 +7,10 @@ LABEL org.opencontainers.image.description="Linux Rust builder image"
 LABEL org.opencontainers.image.licenses=GPL-3.0
 LABEL org.opencontainers.image.revision=$REVISION
 
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-3 /bin/uniffi-bindgen /bin
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-3 /bin/uniffi-bindgen-cs /bin
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-3 /bin/uniffi-bindgen-go /bin
-COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-3 /bin/uniffi-bindgen-cpp /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen-cs /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen-go /bin
+COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen-cpp /bin
 
 ENV QDK_TAG=v2.3.14
 
