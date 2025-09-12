@@ -33,6 +33,7 @@ RUN set -eux; \
     export DEBIAN_FRONTEND=noninteractive; \
     apt-get update; \
     apt-get install -y \
+        cmake \
         # `g++-*` is used by libnudler
         g++-aarch64-linux-gnu \
         g++-arm-linux-gnueabi \
@@ -42,6 +43,7 @@ RUN set -eux; \
         gcc-arm-linux-gnueabi \
         gcc-arm-linux-gnueabihf \
         gcc-i686-linux-gnu \
+        libclang-dev \
         libssl-dev \
         musl-dev \
         musl-tools \
@@ -81,6 +83,11 @@ RUN rustup target add \
         arm-unknown-linux-gnueabi
 
 RUN rustup component add clippy rustfmt
+
+ENV AWS_LC_SYS_INCLUDES_aarch64_unknown_linux_gnu="/usr/aarch64-linux-gnu/include"
+ENV AWS_LC_SYS_INCLUDES_i686_unknown_linux_gnu="/usr/i686-linux-gnu/include/"
+ENV AWS_LC_SYS_INCLUDES_armv7_unknown_linux_gnueabihf="/usr/arm-linux-gnueabihf/include"
+ENV AWS_LC_SYS_INCLUDES_arm_unknown_linux_gnueabi="/usr/arm-linux-gnueabi/include"
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1

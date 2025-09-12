@@ -14,7 +14,8 @@ ENV BUILDOS="linux"
 ENV NDKVERSION="r26"
 ENV NDKZIPNAME="android-ndk-$NDKVERSION-$BUILDOS.zip"
 ENV NDKZIP="https://dl.google.com/android/repository/$NDKZIPNAME"
-ENV TOOLCHAIN="$ANDROIDNDK/android-ndk-$NDKVERSION/toolchains/llvm/prebuilt/linux-x86_64"
+ENV ANDROID_NDK="$ANDROIDNDK/android-ndk-$NDKVERSION"
+ENV TOOLCHAIN="$ANDROID_NDK/toolchains/llvm/prebuilt/linux-x86_64"
 
 # Used for .cargo/config
 ENV PATH="$TOOLCHAIN/bin:$PATH"
@@ -44,6 +45,7 @@ RUN \
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        cmake \
         pip \
         libssl-dev pkg-config \
         python3-requests && \

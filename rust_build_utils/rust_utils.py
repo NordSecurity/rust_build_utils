@@ -410,6 +410,7 @@ def _cargo(
     else:
         run_command(["rustup", "default", project.rust_version])
         run_command(["rustup", "target", "add", config.rust_target])
+    run_command(["rustup", "component", "add", "rustfmt"])
 
     msvc_context = None
     if config.rust_target.endswith("-msvc") and not is_msvc_active():
