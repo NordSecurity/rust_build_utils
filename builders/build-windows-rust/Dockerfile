@@ -15,6 +15,7 @@ ENV GO_VERSION=1.21.6 \
 RUN set -eux; \
     apt-get update; \
     apt-get install -y \
+        cmake \
         gcc-mingw-w64 \
         gcc-mingw-w64-x86-64 \
         pip \
