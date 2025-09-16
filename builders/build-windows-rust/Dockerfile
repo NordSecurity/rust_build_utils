@@ -43,6 +43,7 @@ RUN ARCH=$(uname -m) && \
     rm "protoc-31.1-linux-${PROTOC_ARCH}.zip"
 
 ENV PATH="$PATH:/root/.local/bin"
+ENV AWS_LC_SYS_INCLUDES_x86_64_pc_windows_gnu="/usr/lib/gcc/x86_64-w64-mingw32/14-win32/include"
 
 RUN wget -q https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz; \
     tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz; \
