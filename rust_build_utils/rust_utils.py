@@ -299,7 +299,7 @@ def parse_cli():
 def _build_packages(
     config, packages: List[str], extra_args: Optional[List[str]], subcommand: str
 ) -> None:
-    if "tvos" in config.target_os:
+    if "tvos" in config.target_os or config.rust_target == "mipsel-unknown-linux-musl":
         args = [
             "cargo",
             f"+nightly-{RUST_NIGHTLY_VERSION}",
@@ -393,7 +393,7 @@ def _cargo(
         shutil.rmtree(distribution_dir)
     os.makedirs(distribution_dir)
 
-    if "tvos" in config.target_os:
+    if "tvos" in config.target_os or config.rust_target == "mipsel-unknown-linux-musl":
         run_command(
             ["rustup", "toolchain", "install", f"nightly-{RUST_NIGHTLY_VERSION}"]
         )

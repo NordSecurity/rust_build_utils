@@ -44,6 +44,26 @@ WINDOWS_RUNTIME_LINKING = {
 # }
 
 GLOBAL_CONFIG: Dict[str, Any] = {
+    "openwrt": {
+        "archs": {
+            "x86_64": {
+                "strip_path": "/usr/bin/objcopy",
+                "create_debug_symbols": False,
+                "rust_target": "x86_64-unknown-linux-musl",
+            },
+            "mipsel": {
+                "strip_path": "/opt/mipsel-linux-muslsf-cross/bin/mipsel-linux-muslsf-strip",
+                "create_debug_symbols": False,
+                "rust_target": "mipsel-unknown-linux-musl",
+            },
+            "aarch64": {
+                "strip_path": "/usr/aarch64-linux-gnu/bin/objcopy",
+                "create_debug_symbols": False,
+                "rust_target": "aarch64-unknown-linux-musl",
+            },
+        },
+        "post_build": ["rust_build_utils.linux_build_utils.strip"],
+    },
     "android": {
         "archs": {
             "x86_64": {
