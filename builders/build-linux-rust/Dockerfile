@@ -89,7 +89,9 @@ ENV AWS_LC_SYS_INCLUDES_i686_unknown_linux_gnu="/usr/i686-linux-gnu/include/"
 ENV AWS_LC_SYS_INCLUDES_armv7_unknown_linux_gnueabihf="/usr/arm-linux-gnueabihf/include"
 ENV AWS_LC_SYS_INCLUDES_arm_unknown_linux_gnueabi="/usr/arm-linux-gnueabi/include"
 
-# Download musl for mipsel from our own mirror since musl.cc blocks CI runners
+# musl.cc node (2025-05-27):
+#   "GitHub Actions has been blocked wholesale due to abuse similar to this."
+# Therefore, we fetch musl for mipsel from our own mirror
 RUN curl -LO https://github.com/NordSecurity/rust_build_utils/releases/download/mirror_mipsel-linux-muslsf-cross.tgz/mipsel-linux-muslsf-cross.tgz \
     && tar -xzf mipsel-linux-muslsf-cross.tgz -C /opt \
     && rm mipsel-linux-muslsf-cross.tgz

@@ -9,7 +9,7 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
 
     strip_bin = GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["strip_path"]
     create_debug_symbols = GLOBAL_CONFIG[config.target_os]["archs"][config.arch].get(
-        "create_debug_symbols", False
+        "create_debug_symbols", True
     )
 
     if not path.isfile(strip_bin):

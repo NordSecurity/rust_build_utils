@@ -48,17 +48,16 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         "archs": {
             "x86_64": {
                 "strip_path": "/usr/bin/objcopy",
-                "create_debug_symbols": False,
                 "rust_target": "x86_64-unknown-linux-musl",
             },
             "mipsel": {
                 "strip_path": "/opt/mipsel-linux-muslsf-cross/bin/mipsel-linux-muslsf-strip",
+                # TOOD: for Mipsel the CLI needs to be fixed
                 "create_debug_symbols": False,
                 "rust_target": "mipsel-unknown-linux-musl",
             },
             "aarch64": {
                 "strip_path": "/usr/aarch64-linux-gnu/bin/objcopy",
-                "create_debug_symbols": False,
                 "rust_target": "aarch64-unknown-linux-musl",
             },
         },
