@@ -206,7 +206,7 @@ def create_cli_parser() -> Any:
         help="builds all needed archs before executing lipo",
     )
 
-    fetch_artifacts_parser = subparsers.add_parser("fetch_artifacts_parser", help="Download artifacts from pipeline")
+    fetch_artifacts_parser = subparsers.add_parser("fetch-artifacts", help="Download artifacts from pipeline")
     fetch_artifacts_parser.add_argument("os", type=str, choices=list(GLOBAL_CONFIG.keys()))
     fetch_artifacts_parser.add_argument("arch", type=str)
 
