@@ -4,10 +4,14 @@ from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 
 
 def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
-    if config.target_os != "linux" or config.debug or packages == None:
+    if config.target_os not in ("linux", "openwrt") or config.debug or packages == None:
         return
 
-    strip_bin = GLOBAL_CONFIG["linux"]["archs"][config.arch]["strip_path"]
+    strip_bin = GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["strip_path"]
+    create_debug_symbols = GLOBAL_CONFIG[config.target_os]["archs"][config.arch].get(
+        "create_debug_symbols", True
+    )
+
     if not path.isfile(strip_bin):
         # fallback to default strip
         strip_bin = "objcopy"
@@ -36,5 +40,6 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
     for _, bins in packages.items():
         for _, bin in bins.items():
             bin_path = f"{dist_dir}/{bin}"
-            _create_debug_symbols(bin_path)
+            if create_debug_symbols:
+                _create_debug_symbols(bin_path)
             _strip_debug_symbols(bin_path)
