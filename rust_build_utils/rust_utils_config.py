@@ -52,8 +52,6 @@ GLOBAL_CONFIG: Dict[str, Any] = {
             },
             "mipsel": {
                 "strip_path": "/opt/mipsel-linux-muslsf-cross/bin/mipsel-linux-muslsf-strip",
-                # TOOD: for Mipsel the CLI needs to be fixed
-                "create_debug_symbols": False,
                 "rust_target": "mipsel-unknown-linux-musl",
             },
             "aarch64": {
