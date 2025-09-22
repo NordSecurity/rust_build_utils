@@ -8,9 +8,6 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
         return
 
     strip_bin = GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["strip_path"]
-    create_debug_symbols = GLOBAL_CONFIG[config.target_os]["archs"][config.arch].get(
-        "create_debug_symbols", True
-    )
 
     if not path.isfile(strip_bin):
         # fallback to default strip
@@ -21,14 +18,26 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
     )
 
     def _create_debug_symbols(bin_path: str):
-        create_debug_symbols_cmd = [
-            f"{strip_bin}",
-            "--only-keep-debug",
-            "--compress-debug-sections=zlib",
-            f"{bin_path}",
-            f"{bin_path}.debug",
-        ]
-        rutils.run_command(create_debug_symbols_cmd)
+        if strip_bin.endswith("objcopy"):
+            create_debug_symbols_cmd = [
+                f"{strip_bin}",
+                "--only-keep-debug",
+                "--compress-debug-sections=zlib",
+                f"{bin_path}",
+                f"{bin_path}.debug",
+            ]
+            rutils.run_command(create_debug_symbols_cmd)
+        elif strip_bin.endswith("mipsel-linux-muslsf-strip"):
+            create_debug_symbols_cmd = [
+                f"{strip_bin}",
+                "--only-keep-debug",
+                f"{bin_path}",
+                "-o",
+                f"{bin_path}.debug",
+            ]
+            rutils.run_command(create_debug_symbols_cmd)
+        else:
+            raise ValueError(f"Unsupported strip binary: {strip_bin}")
 
         set_read_only_cmd = ["chmod", "0444", f"{bin_path}.debug"]
         rutils.run_command(set_read_only_cmd)
@@ -40,6 +49,5 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
     for _, bins in packages.items():
         for _, bin in bins.items():
             bin_path = f"{dist_dir}/{bin}"
-            if create_debug_symbols:
-                _create_debug_symbols(bin_path)
+            _create_debug_symbols(bin_path)
             _strip_debug_symbols(bin_path)
