@@ -206,6 +206,11 @@ def create_cli_parser() -> Any:
         help="builds all needed archs before executing lipo",
     )
 
+    fetch_artifacts_parser = subparsers.add_parser(
+        "fetch-artifacts", help="Download artifacts from pipeline"
+    )
+    fetch_artifacts_parser.add_argument("--job-name", type=str, required=True)
+
     xc_parser = subparsers.add_parser(
         "xcframework",
         help="Create .xcframework that includes available platforms and architectures",
