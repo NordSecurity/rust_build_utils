@@ -513,7 +513,7 @@ def copy_tree_or_file(src, dst):
             dst,
         )
     except NotADirectoryError:
-        shutil.copy2(
+        shutil.copyfile(
             src,
             dst,
         )
