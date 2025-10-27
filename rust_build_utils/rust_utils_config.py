@@ -163,7 +163,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
         "archs": {
             "aarch64": {
                 "rust_target": "aarch64-apple-ios-sim",
-                "deployment_assert": ("LC_BUILD_VERSION", "minos", "14.0"),
+                "deployment_assert": {
+                    "static": ("LC_BUILD_VERSION", "minos", "17.2"),
+                    "all": ("LC_BUILD_VERSION", "minos", "14.0"),
+                },
                 "env": {
                     "IPHONEOS_DEPLOYMENT_TARGET": (["10.0"], "set"),
                 },
