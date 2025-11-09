@@ -43,7 +43,9 @@ def _get_load_command_version(
         assert False, f"'{version_key}' not found in load command '{load_command}'"
 
 
-def _assert_load_commands(load_commands: str, deployment_assert) -> None:
+def _assert_load_commands(
+    load_commands: str, deployment_assert, fetch_max_version: bool = False
+) -> None:
     load_command = deployment_assert[0]
     version_key = deployment_assert[1]
     minimum_os = deployment_assert[2]
@@ -55,18 +57,28 @@ def _assert_load_commands(load_commands: str, deployment_assert) -> None:
     )
 
     found_minos_version = False
+    max_version = 0.0
 
     for command_source in re.findall(load_command_regex, load_commands):
         version = _get_load_command_version(command_source, load_command, version_key)
+
         if version:
+            max_version = max(max_version, float(version))
+            found_minos_version = True
+        if version and not fetch_max_version:
             assert (
                 version == minimum_os
             ), f"incorrect {version_key}: {version}, expected {minimum_os}"
-            found_minos_version = True
 
     assert (
         found_minos_version
     ), f"minimum version load command not found ({load_command}, {version_key})"
+
+    # For simulator builds, we want to fetch the max version of the load command in static libraries
+    if fetch_max_version:
+        assert max_version >= float(
+            minimum_os
+        ), f"max version {max_version} is less than minimum version {minimum_os}"
 
 
 def assert_version(
@@ -85,7 +97,20 @@ def assert_version(
             deployment_assert = GLOBAL_CONFIG[config.target_os]["archs"][config.arch][
                 "deployment_assert"
             ]
-            _assert_load_commands(load_commands, deployment_assert)
+
+            # ios-sim build has a different deployment assert for static libraries
+            if isinstance(deployment_assert, dict):
+                _assert_load_commands(
+                    load_commands,
+                    (
+                        deployment_assert["static"]
+                        if binary.endswith(".a")
+                        else deployment_assert["all"]
+                    ),
+                    fetch_max_version=True,
+                )
+            else:
+                _assert_load_commands(load_commands, deployment_assert)
 
 
 def lipo(
@@ -184,6 +209,33 @@ def _framework_modulemap(framework_name: str) -> str:
 """
 
 
+def extract_version(otool_output: str) -> Optional[str]:
+    lines = otool_output.split("\n")
+    properties = dict()
+
+    for line in lines[1:-1]:
+        try:
+            key, value = line.split()
+            properties[key] = value
+        except ValueError:
+            continue
+
+    platform_version_min = [
+        "LC_VERSION_MIN_MACOSX",
+        "LC_VERSION_MIN_IPHONEOS",
+        "LC_VERSION_MIN_TVOS",
+    ]
+
+    if not properties.get("cmd"):
+        return None
+    if properties["cmd"] in platform_version_min:
+        return properties["version"]
+    elif properties["cmd"] == "LC_BUILD_VERSION":
+        return properties["minos"]
+    else:
+        return None
+
+
 def _min_os_version_for_arch(filename: str, arch: str) -> str:
     vtool_output = subprocess.check_output(
         ["vtool", "-arch", arch, "-show-build", filename]
@@ -192,33 +244,38 @@ def _min_os_version_for_arch(filename: str, arch: str) -> str:
     # This is pretty nasty extraction of the vtool output, but it does crash
     # nicely with unexpected changes in format.
     # Originally tested against macOS 14.7.4 (23H420)
-
-    try:
-        lines = vtool_output.split("\n")
-        properties = dict()
-        for line in lines[2:-1]:
-            key, value = line.split()
-            properties[key] = value
-
-        platform_version_min = [
-            "LC_VERSION_MIN_MACOSX",
-            "LC_VERSION_MIN_IPHONEOS",
-            "LC_VERSION_MIN_TVOS",
-        ]
-
-        if properties["cmd"] in platform_version_min:
-            return properties["version"]
-        elif properties["cmd"] == "LC_BUILD_VERSION":
-            return properties["minos"]
-        else:
-            raise Exception()
-    except:
+    version = extract_version(vtool_output)
+    if not version:
         raise Exception(
             f"Unable to extract minimum OS version from vtool output: \n'{vtool_output}'"
         )
 
+    return version
 
-def _min_os_version(filename: str) -> str:
+
+def _min_os_version_for_static_library(filename: str, arch: str) -> str:
+    otool_output = subprocess.check_output(
+        ["otool", "-arch", arch, "-l", filename]
+    ).decode("utf-8")
+
+    load_command_regex = re.compile(
+        r"Load command \d+.*?(?=Load command \d+|\Z)", re.DOTALL
+    )
+
+    versions = []
+
+    for command_source in re.findall(load_command_regex, otool_output):
+        version = extract_version(command_source)
+        if version:
+            versions.append(version)
+
+    if len(versions) == 0:
+        raise Exception(f"versions not found for {filename}")
+
+    return str(max(map(float, versions)))
+
+
+def _min_os_version(filename: str, is_static: bool = False) -> str:
     archs = subprocess.check_output(["lipo", filename, "-archs"]).split()
 
     arch_min_os_versions = []
@@ -226,7 +283,11 @@ def _min_os_version(filename: str) -> str:
     for arch in archs:
         arch_str = arch.decode("utf-8")
 
-        arch_min_os_version = _min_os_version_for_arch(filename, arch_str)
+        arch_min_os_version = (
+            _min_os_version_for_arch(filename, arch_str)
+            if not is_static
+            else _min_os_version_for_static_library(filename, arch_str)
+        )
         arch_min_os_version_components = tuple(map(int, arch_min_os_version.split(".")))
         arch_min_os_versions.append(arch_min_os_version_components)
 
@@ -245,6 +306,7 @@ def create_xcframework(
     headers_directory: Dict[Path, Path],
     library_file_name: str,
     target_os_list: List[str] = rutils.XCFRAMEWORK_TARGET_OSES,
+    is_static: bool = False,
 ) -> None:
     xcframework_path = get_xcframework_path(project, debug, framework_name)
     if xcframework_path.exists():
@@ -291,23 +353,21 @@ def create_xcframework(
         )
 
         # fix @rpath to relative one since the absolute is embedded at this point
+        if not is_static:
+            if versioned_framework:
+                id_dylib = f"@rpath/{swift_module_name}.framework/Versions/A/{swift_module_name}"
+            else:
+                id_dylib = f"@rpath/{swift_module_name}.framework/{swift_module_name}"
 
-        if versioned_framework:
-            id_dylib = (
-                f"@rpath/{swift_module_name}.framework/Versions/A/{swift_module_name}"
+            subprocess.run(
+                [
+                    "install_name_tool",
+                    "-id",
+                    id_dylib,
+                    framework_inner_path / swift_module_name,
+                ],
+                check=True,
             )
-        else:
-            id_dylib = f"@rpath/{swift_module_name}.framework/{swift_module_name}"
-
-        subprocess.run(
-            [
-                "install_name_tool",
-                "-id",
-                id_dylib,
-                framework_inner_path / swift_module_name,
-            ],
-            check=True,
-        )
 
         # Add headers
 
@@ -361,7 +421,9 @@ def create_xcframework(
             info_plist.write(
                 _framework_info_plist(
                     swift_module_name,
-                    _min_os_version(str(framework_inner_path / swift_module_name)),
+                    _min_os_version(
+                        str(framework_inner_path / swift_module_name), is_static
+                    ),
                 )
             )
 
