@@ -74,7 +74,11 @@ echo "$FEED_TYPE $FEED_NAME $FEED_PATH" > feeds.conf
 ./scripts/feeds install -a
 
 # The logs overflow CI/CD log limit so they are redirected to a file instead
-make package/${PKG_NAME}/{clean,compile} -j"$workers" V=s PKG_BINFILE="$PRECOMPILED_BINARY" > /tmp/build.log 2>&1
+if [ "${GITLAB_CI:-}" == "true" ]; then
+    make package/${PKG_NAME}/{clean,compile} -j"$workers" V=s PKG_BINFILE="$PRECOMPILED_BINARY" > /tmp/build.log 2>&1
+else
+    make package/${PKG_NAME}/{clean,compile} -j"$workers" V=s PKG_BINFILE="$PRECOMPILED_BINARY"
+fi
 
 # Find the resulting .ipk(there should be just one)
 pkg_path=$(find "$WORKDIR/bin/packages" -type f -name "*.ipk" | head -n1)
