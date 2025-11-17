@@ -42,10 +42,10 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
         set_read_only_cmd = ["chmod", "0444", f"{bin_path}.debug"]
         rutils.run_command(set_read_only_cmd)
 
-    def _strip_debug_symbols(bin_path: str, bin_name: str):
+    def _strip_debug_symbols(bin_path: str):
         strip_cmd = [
             f"{strip_bin}",
-            "--strip-unneeded" if bin_name.endswith(".a") else "--strip-all",
+            "--strip-unneeded" if bin_path.endswith(".a") else "--strip-all",
             f"{bin_path}",
         ]
         rutils.run_command(strip_cmd)
@@ -54,4 +54,4 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
         for _, bin in bins.items():
             bin_path = f"{dist_dir}/{bin}"
             _create_debug_symbols(bin_path)
-            _strip_debug_symbols(bin_path, bin)
+            _strip_debug_symbols(bin_path)
