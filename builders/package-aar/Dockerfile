@@ -1,4 +1,4 @@
-FROM openjdk:8-jdk
+FROM debian:buster-slim
 
 ARG REVISION
 
@@ -21,7 +21,12 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     python3-requests \
     wget \
+    curl \
+    unzip \
+    openjdk-8-jdk \
     && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
     
 RUN ARCH=$(uname -m) && \
     case $ARCH in \

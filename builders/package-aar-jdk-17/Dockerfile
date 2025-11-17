@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-slim-bullseye
+FROM debian:bullseye-slim
 
 ARG REVISION
 
@@ -18,6 +18,7 @@ WORKDIR ${WORKDIR}
 
 # Install Android SDK
 RUN apt-get update && apt-get install -y \
+        openjdk-17-jdk \
         openjdk-11-jdk \
         bash \
         curl \
@@ -28,6 +29,8 @@ RUN apt-get update && apt-get install -y \
         unzip \
         wget \
     && rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
     
 RUN ARCH=$(uname -m) && \
     case $ARCH in \
