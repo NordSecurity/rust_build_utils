@@ -43,7 +43,11 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
         rutils.run_command(set_read_only_cmd)
 
     def _strip_debug_symbols(bin_path: str):
-        strip_cmd = [f"{strip_bin}", "--strip-all", f"{bin_path}"]
+        strip_cmd = [
+            f"{strip_bin}",
+            "--strip-unneeded" if bin_path.endswith(".a") else "--strip-all",
+            f"{bin_path}",
+        ]
         rutils.run_command(strip_cmd)
 
     for _, bins in packages.items():
