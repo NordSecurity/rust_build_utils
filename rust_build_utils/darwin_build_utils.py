@@ -306,7 +306,6 @@ def create_xcframework(
     headers_directory: Dict[Path, Path],
     library_file_name: str,
     target_os_list: List[str] = rutils.XCFRAMEWORK_TARGET_OSES,
-    is_static: bool = False,
 ) -> None:
     xcframework_path = get_xcframework_path(project, debug, framework_name)
     if xcframework_path.exists():
@@ -318,7 +317,6 @@ def create_xcframework(
         versioned_framework = target_os in ["macos"]
 
         # Create concrete Framework structure
-
         framework_path = (
             get_universal_library_distribution_directory(project, target_os, debug)
             / f"{swift_module_name}.framework"
@@ -342,18 +340,48 @@ def create_xcframework(
             framework_resources_dir = framework_inner_path / "Resources"
             framework_resources_dir.mkdir()
 
-        # Add dylib
+        dist_dir = get_universal_library_distribution_directory(
+            project, target_os, debug
+        )
 
-        lib_path = str(
-            get_universal_library_distribution_directory(project, target_os, debug)
-            / library_file_name
-        )
+        library_file_path = dist_dir / library_file_name
+        if not library_file_path.exists():
+            # Search a lib file when the given file name doesn't contain an extension
+            if library_file_path.suffix:
+                raise FileNotFoundError(
+                    f"{library_file_path} not found for {target_os} in {dist_dir}. "
+                )
+
+            dylib_path = dist_dir / f"{library_file_name}.dylib"
+            static_path = dist_dir / f"{library_file_name}.a"
+            if dylib_path.exists() and static_path.exists():
+                raise ValueError(
+                    "Multiple library types found:",
+                    dylib_path,
+                    static_path,
+                    "Expected only one type.",
+                )
+
+            if dylib_path.exists():
+                library_file_path = dylib_path
+            elif static_path.exists():
+                library_file_path = static_path
+            else:
+                raise FileNotFoundError(
+                    f"Library file not found for {target_os} in {dist_dir}. "
+                    f"Expected either {dylib_path.name} or {static_path.name}."
+                )
+
         shutil.copyfile(
-            lib_path, framework_inner_path / swift_module_name, follow_symlinks=False
+            library_file_path,
+            framework_inner_path / swift_module_name,
+            follow_symlinks=False,
         )
+
+        is_static_lib = library_file_path.suffix == ".a"
 
         # fix @rpath to relative one since the absolute is embedded at this point
-        if not is_static:
+        if not is_static_lib:
             if versioned_framework:
                 id_dylib = f"@rpath/{swift_module_name}.framework/Versions/A/{swift_module_name}"
             else:
@@ -422,7 +450,7 @@ def create_xcframework(
                 _framework_info_plist(
                     swift_module_name,
                     _min_os_version(
-                        str(framework_inner_path / swift_module_name), is_static
+                        str(framework_inner_path / swift_module_name), is_static_lib
                     ),
                 )
             )
