@@ -27,7 +27,7 @@ def strip(project: rutils.Project, config: rutils.CargoConfig, packages=None):
                 f"{bin_path}.debug",
             ]
             rutils.run_command(create_debug_symbols_cmd)
-        elif strip_bin.endswith("mipsel-linux-muslsf-strip"):
+        elif strip_bin.endswith("mipsel-linux-muslsf-strip") or strip_bin.endswith("mips-linux-muslsf-strip"):
             create_debug_symbols_cmd = [
                 f"{strip_bin}",
                 "--only-keep-debug",
