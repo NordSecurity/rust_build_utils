@@ -10,12 +10,13 @@ grep -q "This is the OpenWrt SDK" /builder/README.md || {
 }
 
 usage() {
-    echo "Usage: $0 <feed-path> <feed-type> <precompiled-binary> <package-name>"
+    echo "Usage: $0 <feed-path> <feed-type> <precompiled-binary> <package-name> <package-extension>"
     echo ""
     echo "  feed-path               Path or URL to the feed (e.g. /path/to/feed or https://...)"
     echo "  feed-type               Type of feed source: src-git or src-link"
     echo "  precompiled-binary      Path to the prebuilt binary to package"
     echo "  package-name            Package name"
+    echo "  package-extension       ipk or apk"
     echo ""
     exit 1
 }
@@ -48,6 +49,7 @@ FEED_PATH="$1"
 FEED_TYPE="$2"
 PRECOMPILED_BINARY="$3"
 PKG_NAME="$4"
+PKG_EXT="$5"
 
 WORKDIR=/builder
 FEED_NAME=custom
@@ -81,10 +83,10 @@ else
 fi
 
 # Find the resulting .ipk(there should be just one)
-pkg_path=$(find "$WORKDIR/bin/packages" -type f -name "*.ipk" | head -n1)
+pkg_path=$(find "$WORKDIR/bin/packages" -type f -name "*.${PKG_EXT}" | head -n1)
 
 if [ -z "$pkg_path" ]; then
-    echo "ERROR: No .ipk found in $WORKDIR/bin/packages" >&2
+    echo "ERROR: No .${PKG_EXT} found in $WORKDIR/bin/packages" >&2
     exit 2
 fi
 
