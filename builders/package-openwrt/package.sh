@@ -38,7 +38,7 @@ parse_config_arch() {
     awk -F= '/^CONFIG_ARCH=/ {gsub(/"/, "", $2); print $2}' "$WORKDIR/.config"
 }
 
-if [ "$#" -ne 4 ]; then
+if [ "$#" -ne 5 ]; then
     echo "ERROR: Missing or extra arguments." >&2
     usage
 fi
