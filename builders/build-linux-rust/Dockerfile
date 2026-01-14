@@ -99,7 +99,7 @@ RUN curl -LO https://github.com/NordSecurity/rust_build_utils/releases/download/
 RUN echo "[target.mipsel-unknown-linux-musl]\n" >> ${CARGO_HOME}/config.toml
 RUN echo "linker = \"/opt/mipsel-linux-muslsf-cross/bin/mipsel-linux-muslsf-gcc\"" >> ${CARGO_HOME}/config.toml
 
-RUN curl -LO https://musl.cc/mips-linux-muslsf-cross.tgz \
+RUN curl -LO https://github.com/NordSecurity/rust_build_utils/releases/download/mirror_mips-linux-muslsf-cross.tgz/mips-linux-muslsf-cross.tgz \
     && tar -xzf mips-linux-muslsf-cross.tgz -C /opt \
     && rm mips-linux-muslsf-cross.tgz
 
