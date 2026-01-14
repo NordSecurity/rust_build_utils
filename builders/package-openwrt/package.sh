@@ -26,12 +26,12 @@ detect_binary_arch_from_bin() {
     case "$machine" in
         "Advanced Micro Devices X86-64") echo "x86_64" ;;
         "MIPS R3000")
-            data=$(readelf -h "$1" | awk -F: '/Data:/ {print $2}' | xargs)
-            if [[ "$data" == *"little endian"* ]]; then
-                echo "mipsel"
-            else
-                echo "mips"
-            fi
+            data=$(readelf -h "$1" | awk -F: '/Data:/ {print $2}')
+            case "$data" in
+                *"little endian"*) echo "mipsel" ;;
+                *"big endian"*) echo "mips" ;;
+                *) echo "ERROR: unsupported MIPS endianness: $data" >&2; exit 1 ;;
+            esac
             ;;
         "AArch64") echo "aarch64" ;;
         *) echo "ERROR: unsupported ELF: $machine" >&2; exit 1 ;;
