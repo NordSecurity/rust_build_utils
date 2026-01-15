@@ -54,6 +54,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                 "strip_path": "/opt/mipsel-linux-muslsf-cross/bin/mipsel-linux-muslsf-strip",
                 "rust_target": "mipsel-unknown-linux-musl",
             },
+            "mips": {
+                "strip_path": "/opt/mips-linux-muslsf-cross/bin/mips-linux-muslsf-strip",
+                "rust_target": "mips-unknown-linux-musl",
+            },
             "aarch64": {
                 "strip_path": "/usr/aarch64-linux-gnu/bin/objcopy",
                 "rust_target": "aarch64-unknown-linux-musl",
