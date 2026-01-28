@@ -44,6 +44,73 @@ parse_config_arch() {
     awk -F= '/^CONFIG_ARCH=/ {gsub(/"/, "", $2); print $2}' "$WORKDIR/.config"
 }
 
+# Read BOARD and SUBTARGET from .config (preferred), otherwise infer from CONFIG_TARGET_* selections.
+parse_config_board() {
+  local v
+  v=$(awk -F= '/^CONFIG_TARGET_BOARD=/ {gsub(/"/, "", $2); print $2}' "$WORKDIR/.config" | head -n1 || true)
+  if [ -n "$v" ]; then
+    echo "$v"
+    return 0
+  fi
+
+  # Fallback: infer board from "CONFIG_TARGET_<board>=y"
+  grep -E '^CONFIG_TARGET_[^_]+=[y]$' "$WORKDIR/.config" \
+    | sed -E 's/^CONFIG_TARGET_([^=]+)=y$/\1/' \
+    | head -n1 || true
+}
+
+parse_config_subtarget() {
+  local v board
+  v=$(awk -F= '/^CONFIG_TARGET_SUBTARGET=/ {gsub(/"/, "", $2); print $2}' "$WORKDIR/.config" | head -n1 || true)
+  if [ -n "$v" ]; then
+    echo "$v"
+    return 0
+  fi
+
+  board="$(parse_config_board)"
+  if [ -z "$board" ]; then
+    echo ""
+    return 0
+  fi
+
+  # Fallback: infer subtarget from "CONFIG_TARGET_<board>_<subtarget>=y"
+  grep -E "^CONFIG_TARGET_${board}_.+=y$" "$WORKDIR/.config" \
+    | sed -E "s/^CONFIG_TARGET_${board}_([^=]+)=y$/\1/" \
+    | head -n1 || true
+}
+
+# Parse ARCH_PACKAGES from produced ipk name:
+# nordvpnlite_0.1.0-r1_aarch64_cortex-a53.ipk -> aarch64_cortex-a53
+parse_arch_packages_from_ipk_name() {
+  local base rest arch
+  base="$(basename "$1")"
+  base="${base%.ipk}"
+  rest="${base#${PKG_NAME}_}"
+  arch="${rest#*_}"
+  echo "$arch"
+}
+
+# Ensure the target matches OPENWRT_TARGET (set in CI, e.g. "ramips/mt7621")
+assert_expected_target_from_config() {
+  local expected expected_board expected_subtarget board subtarget
+  expected="${OPENWRT_TARGET:-}"
+  [ -z "$expected" ] && return 0
+
+  expected_board="${expected%%/*}"
+  expected_subtarget="${expected##*/}"
+
+  board="$(parse_config_board)"
+  subtarget="$(parse_config_subtarget)"
+
+  if [ "$board" != "$expected_board" ] || [ "$subtarget" != "$expected_subtarget" ]; then
+    echo "ERROR: Wrong target selected in .config: got '${board}/${subtarget}', expected '${expected_board}/${expected_subtarget}'" >&2
+    echo "Hint: container/setup.sh likely selected the wrong SDK target." >&2
+    echo "Debug (.config target lines):" >&2
+    grep -E '^(CONFIG_TARGET_BOARD=|CONFIG_TARGET_SUBTARGET=|CONFIG_TARGET_[A-Za-z0-9_]+=y)' "$WORKDIR/.config" | head -n 200 >&2 || true
+    exit 4
+  fi
+}
+
 if [ "$#" -ne 4 ]; then
     echo "ERROR: Missing or extra arguments." >&2
     usage
@@ -60,8 +127,22 @@ WORKDIR=/builder
 FEED_NAME=custom
 cd "$WORKDIR"
 
+# If CI provides OPENWRT_TARGET, also set TARGET for any helper scripts that read it.
+# This overrides image defaults like TARGET=malta/le.
+if [ -n "${OPENWRT_TARGET:-}" ]; then
+  export TARGET="$OPENWRT_TARGET"
+fi
+
+# Some SDK images include setup.sh. If present, it may download/prepare SDK components.
+if [ -x ./setup.sh ]; then
+  ./setup.sh
+fi
+
 # Generate default .config, it is enough to call this once so TUI wouldn't popup and block the execution.
 make defconfig
+
+# Fail fast if we are not in the expected SDK target
+assert_expected_target_from_config
 
 # Enforce provided binary architecture matches expected SDK architecture
 binary_arch=$(detect_binary_arch_from_bin "$PRECOMPILED_BINARY")
@@ -95,4 +176,22 @@ if [ -z "$pkg_path" ]; then
     exit 2
 fi
 
-echo $pkg_path
+if [ -z "${OPENWRT_TARGET:-}" ]; then
+    echo "$pkg_path"
+    exit 0
+fi
+
+# Rename to: <BOARD>_<SUBTARGET>_<ARCH_PACKAGES>.ipk
+board="$(parse_config_board)"
+subtarget="$(parse_config_subtarget)"
+arch_pkgs="$(parse_arch_packages_from_ipk_name "$pkg_path")"
+
+if [ -n "$board" ] && [ -n "$subtarget" ] && [ -n "$arch_pkgs" ]; then
+    renamed_path="$(dirname "$pkg_path")/${board}_${subtarget}_${arch_pkgs}.ipk"
+    mv -f "$pkg_path" "$renamed_path"
+    echo "$renamed_path"
+else
+    echo "WARNING: Could not detect BOARD/SUBTARGET/ARCH_PACKAGES reliably; leaving original filename." >&2
+    echo "WARNING: board='$board' subtarget='$subtarget' arch='$arch_pkgs'" >&2
+    echo "$pkg_path"
+fi
