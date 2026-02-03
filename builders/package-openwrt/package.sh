@@ -59,24 +59,21 @@ parse_config_board() {
     | head -n1 || true
 }
 
+# Accept board as parameter to avoid recomputing it
 parse_config_subtarget() {
   local v board
+  board="$1"
+
   v=$(awk -F= '/^CONFIG_TARGET_SUBTARGET=/ {gsub(/"/, "", $2); print $2}' "$WORKDIR/.config" | head -n1 || true)
   if [ -n "$v" ]; then
     echo "$v"
     return 0
   fi
 
-  board="$(parse_config_board)"
   if [ -z "$board" ]; then
     echo ""
     return 0
   fi
-
-  # Fallback: infer subtarget from "CONFIG_TARGET_<board>_<subtarget>=y"
-  grep -E "^CONFIG_TARGET_${board}_.+=y$" "$WORKDIR/.config" \
-    | sed -E "s/^CONFIG_TARGET_${board}_([^=]+)=y$/\1/" \
-    | head -n1 || true
 }
 
 # Parse ARCH_PACKAGES from produced ipk name:
@@ -91,16 +88,15 @@ parse_arch_packages_from_ipk_name() {
 }
 
 # Ensure the target matches OPENWRT_TARGET (set in CI, e.g. "ramips/mt7621")
-assert_expected_target_from_config() {
-  local expected expected_board expected_subtarget board subtarget
+# Uses parsed board/subtarget to avoid re-reading .config
+assert_expected_sdk_image() {
+  local board="$1" subtarget="$2"
+  local expected expected_board expected_subtarget
   expected="${OPENWRT_TARGET:-}"
   [ -z "$expected" ] && return 0
 
   expected_board="${expected%%/*}"
   expected_subtarget="${expected##*/}"
-
-  board="$(parse_config_board)"
-  subtarget="$(parse_config_subtarget)"
 
   if [ "$board" != "$expected_board" ] || [ "$subtarget" != "$expected_subtarget" ]; then
     echo "ERROR: Wrong target selected in .config: got '${board}/${subtarget}', expected '${expected_board}/${expected_subtarget}'" >&2
@@ -127,13 +123,14 @@ WORKDIR=/builder
 FEED_NAME=custom
 cd "$WORKDIR"
 
-# If CI provides OPENWRT_TARGET, also set TARGET for any helper scripts that read it.
-# This overrides image defaults like TARGET=malta/le.
+# If CI provides OPENWRT_TARGET, also set TARGET for any helper scripts that read it
+# In our environment setup.sh uses TARGET to download/verify the correct SDK tarball
+# This overrides image defaults like TARGET=malta/le
 if [ -n "${OPENWRT_TARGET:-}" ]; then
   export TARGET="$OPENWRT_TARGET"
 fi
 
-# Some SDK images include setup.sh. If present, it may download/prepare SDK components.
+# Some images include setup.sh. In our environment it downloads/verifies the correct SDK for $TARGET
 if [ -x ./setup.sh ]; then
   ./setup.sh
 fi
@@ -141,13 +138,15 @@ fi
 # Generate default .config, it is enough to call this once so TUI wouldn't popup and block the execution.
 make defconfig
 
+# Parse needed parameters once
+board="$(parse_config_board)"
+subtarget="$(parse_config_subtarget "$board")"
+sdk_arch="$(parse_config_arch)"
+
 # Fail fast if we are not in the expected SDK target
-assert_expected_target_from_config
+assert_expected_sdk_image "$board" "$subtarget"
 
-# Enforce provided binary architecture matches expected SDK architecture
-binary_arch=$(detect_binary_arch_from_bin "$PRECOMPILED_BINARY")
-sdk_arch=$(parse_config_arch)
-
+binary_arch="$(detect_binary_arch_from_bin "$PRECOMPILED_BINARY")"
 if [ "$binary_arch" != "$sdk_arch" ]; then
     echo "ERROR: Arch mismatch: binary=$binary_arch sdk=$sdk_arch" >&2
     exit 1
@@ -182,8 +181,6 @@ if [ -z "${OPENWRT_TARGET:-}" ]; then
 fi
 
 # Rename to: <BOARD>_<SUBTARGET>_<ARCH_PACKAGES>.ipk
-board="$(parse_config_board)"
-subtarget="$(parse_config_subtarget)"
 arch_pkgs="$(parse_arch_packages_from_ipk_name "$pkg_path")"
 
 if [ -n "$board" ] && [ -n "$subtarget" ] && [ -n "$arch_pkgs" ]; then
