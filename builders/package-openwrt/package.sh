@@ -9,13 +9,23 @@ grep -q "This is the OpenWrt SDK" /builder/README.md || {
     exit 1
 }
 
+# Determine package format based on SDK tooling.
+# OpenWrt 25.x SDK ships `apk`; earlier releases (e.g. 24.10) only have `usign`/`opkg`.
+if [ -x /builder/staging_dir/host/bin/apk ]; then
+    PKG_EXT=apk
+else
+    PKG_EXT=ipk
+fi
+
 usage() {
-    echo "Usage: $0 <feed-path> <feed-type> <precompiled-binary> <package-name>"
+    echo "Usage: $0 <feed-path> <feed-type> <precompiled-binary> <package-name> [output-dir]"
     echo ""
     echo "  feed-path               Path or URL to the feed (e.g. /path/to/feed or https://...)"
     echo "  feed-type               Type of feed source: src-git or src-link"
     echo "  precompiled-binary      Path to the prebuilt binary to package"
     echo "  package-name            Package name"
+    echo "  output-dir              Optional. If provided, the resulting package is copied here."
+    echo "                          Avoids callers needing to know the package extension (.ipk/.apk)."
     echo ""
     exit 1
 }
@@ -44,7 +54,7 @@ parse_config_arch() {
     awk -F= '/^CONFIG_ARCH=/ {gsub(/"/, "", $2); print $2}' "$WORKDIR/.config"
 }
 
-if [ "$#" -ne 4 ]; then
+if [ "$#" -lt 4 ] || [ "$#" -gt 5 ]; then
     echo "ERROR: Missing or extra arguments." >&2
     usage
 fi
@@ -55,6 +65,7 @@ FEED_PATH="$1"
 FEED_TYPE="$2"
 PRECOMPILED_BINARY="$3"
 PKG_NAME="$4"
+OUTPUT_DIR="${5:-}"
 
 WORKDIR=/builder
 FEED_NAME=custom
@@ -87,12 +98,16 @@ else
     make package/${PKG_NAME}/{clean,compile} -j"$workers" V=s PKG_BINFILE="$PRECOMPILED_BINARY"
 fi
 
-# Find the resulting .ipk(there should be just one)
-pkg_path=$(find "$WORKDIR/bin/packages" -type f -name "*.ipk" | head -n1)
+# Find the resulting package (there should be just one)
+pkg_path=$(find "$WORKDIR/bin/packages" -type f -name "*.${PKG_EXT}" | head -n1)
 
 if [ -z "$pkg_path" ]; then
-    echo "ERROR: No .ipk found in $WORKDIR/bin/packages" >&2
+    echo "ERROR: No .${PKG_EXT} found in $WORKDIR/bin/packages" >&2
     exit 2
 fi
 
-echo $pkg_path
+if [ -n "$OUTPUT_DIR" ]; then
+    cp "$pkg_path" "$OUTPUT_DIR/"
+fi
+
+echo "$pkg_path"
