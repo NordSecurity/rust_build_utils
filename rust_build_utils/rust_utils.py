@@ -151,11 +151,8 @@ def config_local_env_vars(config, local_config):
             for env, tuple in local_config[config.target_os]["archs"][config.arch][
                 "env"
             ].items():
-                if not "env" in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]:
-                    GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["env"] = {
-                        env: tuple
-                    }
-                    return
+                if "env" not in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]:
+                    GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["env"] = {}
                 if (
                     env in GLOBAL_CONFIG[config.target_os]["archs"][config.arch]["env"]
                     and tuple[1] == "append"
