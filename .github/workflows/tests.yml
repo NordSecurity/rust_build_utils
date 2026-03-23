@@ -11,28 +11,28 @@ jobs:
         include:
           - arch: x86_64
             target_os: macos
-            runner: macos-13
+            runner: macos-15
           - arch: aarch64
             target_os: macos
-            runner: macos-13
+            runner: macos-15
           - arch: aarch64
             target_os: ios
-            runner: macos-13
+            runner: macos-15
           - arch: aarch64
             target_os: tvos
-            runner: macos-13
+            runner: macos-15
           - arch: aarch64
             target_os: ios-sim
-            runner: macos-13
+            runner: macos-15
           - arch: aarch64
             target_os: tvos-sim
-            runner: macos-13
+            runner: macos-15
           - arch: x86_64
             target_os: ios-sim
-            runner: macos-13
+            runner: macos-15
           - arch: x86_64
             target_os: tvos-sim
-            runner: macos-13
+            runner: macos-15
           - arch: x86_64
             target_os: windows
             runner: windows-2022
@@ -91,7 +91,7 @@ jobs:
     strategy:
       matrix:
         debug: ['--debug', '']
-    runs-on: macos-13
+    runs-on: macos-15
     needs: test-build-native
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
