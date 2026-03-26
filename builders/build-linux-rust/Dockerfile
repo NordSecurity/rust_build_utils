@@ -82,9 +82,7 @@ RUN rustup target add \
         aarch64-unknown-linux-gnu \
         arm-unknown-linux-gnueabi
 
-RUN rustup component add clippy rustfmt llvm-tools
-RUN rustup install nightly
-RUN cargo install cargo-fuzz
+RUN rustup component add clippy rustfmt
 
 ENV AWS_LC_SYS_INCLUDES_aarch64_unknown_linux_gnu="/usr/aarch64-linux-gnu/include"
 ENV AWS_LC_SYS_INCLUDES_i686_unknown_linux_gnu="/usr/i686-linux-gnu/include/"
