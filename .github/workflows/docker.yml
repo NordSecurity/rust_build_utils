@@ -13,6 +13,7 @@ on:
         options:
         - build-android-rust
         - build-linux-rust
+        - build-openwrt-rust
         - build-windows-rust
         - package-aar-jdk-17
         - test-nudler-nordvpn
@@ -60,7 +61,7 @@ jobs:
         file: builders/${{ inputs.name }}/Dockerfile
         builder: ${{ steps.buildx.outputs.name }}
         platforms: |-
-          ${{ (github.event.inputs.name == 'build-linux-rust' || github.event.inputs.name == 'build-windows-rust') && 'linux/amd64,linux/arm64' ||
+          ${{ (github.event.inputs.name == 'build-linux-rust' || github.event.inputs.name == 'build-windows-rust' || github.event.inputs.name == 'build-openwrt-rust') && 'linux/amd64,linux/arm64' ||
               'linux/amd64' }}
         push: true
         tags: ${{ env.REGISTRY }}/nordsecurity/${{ inputs.name }}${{ inputs.rust_version }}:${{ inputs.version }}
@@ -74,9 +75,9 @@ jobs:
         name:
           - build-android-rust
           - build-linux-rust
+          - build-openwrt-rust
           - build-windows-rust
           - package-aar-jdk-17
-
           - test-nudler-nordvpn
     runs-on: ubuntu-22.04
     permissions:
@@ -107,7 +108,7 @@ jobs:
         file: builders/${{ matrix.name }}/Dockerfile
         builder: ${{ steps.buildx.outputs.name }}
         platforms: |-
-          ${{ (matrix.name == 'build-linux-rust' || matrix.name == 'build-windows-rust') && 'linux/amd64,linux/arm64' ||
+          ${{ (matrix.name == 'build-linux-rust' || matrix.name == 'build-windows-rust' || matrix.name == 'build-openwrt-rust') && 'linux/amd64,linux/arm64' ||
               'linux/amd64' }}
         push: true
         tags: ${{ env.REGISTRY }}/nordsecurity/${{ matrix.name }}:debug-${{ github.sha }}

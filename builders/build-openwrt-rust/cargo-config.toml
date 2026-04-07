@@ -1,0 +1,11 @@
+[target.mipsel-unknown-linux-musl]
+linker = "/opt/mipsel-linux-muslsf-cross/bin/mipsel-linux-muslsf-gcc"
+
+[target.mips-unknown-linux-musl]
+linker = "/opt/mips-linux-muslsf-cross/bin/mips-linux-muslsf-gcc"
+
+[target.armv7-unknown-linux-musleabihf]
+linker = "/opt/arm-linux-musleabihf-cross/bin/arm-linux-musleabihf-gcc"
+
+[target.aarch64-unknown-linux-musl]
+linker = "aarch64-linux-gnu-gcc"
