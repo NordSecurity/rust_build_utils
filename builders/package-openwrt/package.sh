@@ -108,6 +108,7 @@ if [ -z "$pkg_path" ]; then
 fi
 
 if [ -n "$OUTPUT_DIR" ]; then
+    mkdir -p "$OUTPUT_DIR"
     cp "$pkg_path" "$OUTPUT_DIR/"
 fi
 
