@@ -62,6 +62,10 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                 "strip_path": "/usr/aarch64-linux-gnu/bin/objcopy",
                 "rust_target": "aarch64-unknown-linux-musl",
             },
+            "armv7hf": {
+                "strip_path": "/opt/arm-linux-musleabihf-cross/bin/arm-linux-musleabihf-objcopy",
+                "rust_target": "armv7-unknown-linux-musleabihf",
+            },
         },
         "post_build": ["rust_build_utils.linux_build_utils.strip"],
     },

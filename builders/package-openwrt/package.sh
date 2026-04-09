@@ -44,6 +44,7 @@ detect_binary_arch_from_bin() {
             esac
             ;;
         "AArch64") echo "aarch64" ;;
+        "ARM") echo "arm" ;;
         *) echo "ERROR: unsupported ELF: $machine" >&2; exit 1 ;;
     esac
 }
@@ -107,6 +108,7 @@ if [ -z "$pkg_path" ]; then
 fi
 
 if [ -n "$OUTPUT_DIR" ]; then
+    mkdir -p "$OUTPUT_DIR"
     cp "$pkg_path" "$OUTPUT_DIR/"
 fi
 
