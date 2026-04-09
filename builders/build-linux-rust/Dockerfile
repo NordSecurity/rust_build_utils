@@ -45,8 +45,6 @@ RUN set -eux; \
         gcc-i686-linux-gnu \
         libclang-dev \
         libssl-dev \
-        musl-dev \
-        musl-tools \
         pip \
         python3-requests \
         pkg-config; \
@@ -76,7 +74,6 @@ ENV PATH="$PATH:/root/.local/bin"
 
 RUN rustup target add \
         x86_64-unknown-linux-gnu \
-        x86_64-unknown-linux-musl \
         i686-unknown-linux-gnu \
         armv7-unknown-linux-gnueabihf \
         aarch64-unknown-linux-gnu \
@@ -88,23 +85,6 @@ ENV AWS_LC_SYS_INCLUDES_aarch64_unknown_linux_gnu="/usr/aarch64-linux-gnu/includ
 ENV AWS_LC_SYS_INCLUDES_i686_unknown_linux_gnu="/usr/i686-linux-gnu/include/"
 ENV AWS_LC_SYS_INCLUDES_armv7_unknown_linux_gnueabihf="/usr/arm-linux-gnueabihf/include"
 ENV AWS_LC_SYS_INCLUDES_arm_unknown_linux_gnueabi="/usr/arm-linux-gnueabi/include"
-
-# musl.cc node (2025-05-27):
-#   "GitHub Actions has been blocked wholesale due to abuse similar to this."
-# Therefore, we fetch musl for mipsel from our own mirror
-RUN curl -LO https://github.com/NordSecurity/rust_build_utils/releases/download/mirror_mipsel-linux-muslsf-cross.tgz/mipsel-linux-muslsf-cross.tgz \
-    && tar -xzf mipsel-linux-muslsf-cross.tgz -C /opt \
-    && rm mipsel-linux-muslsf-cross.tgz
-
-RUN echo "[target.mipsel-unknown-linux-musl]\n" >> ${CARGO_HOME}/config.toml
-RUN echo "linker = \"/opt/mipsel-linux-muslsf-cross/bin/mipsel-linux-muslsf-gcc\"" >> ${CARGO_HOME}/config.toml
-
-RUN curl -LO https://github.com/NordSecurity/rust_build_utils/releases/download/mirror_mips-linux-muslsf-cross.tgz/mips-linux-muslsf-cross.tgz \
-    && tar -xzf mips-linux-muslsf-cross.tgz -C /opt \
-    && rm mips-linux-muslsf-cross.tgz
-
-RUN echo "[target.mips-unknown-linux-musl]\n" >> ${CARGO_HOME}/config.toml
-RUN echo "linker = \"/opt/mips-linux-muslsf-cross/bin/mips-linux-muslsf-gcc\"" >> ${CARGO_HOME}/config.toml
 
 # Skip llt-secrets check when building in builder images
 ENV BYPASS_LLT_SECRETS=1
