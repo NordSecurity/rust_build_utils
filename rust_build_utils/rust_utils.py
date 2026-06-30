@@ -192,6 +192,11 @@ def create_cli_parser() -> Any:
     build_parser.add_argument("arch", type=str)
     build_parser.add_argument("--target", type=str)
     build_parser.add_argument("--debug", action="store_true", help="Create debug build")
+    build_parser.add_argument(
+        "--cargo-features",
+        type=str,
+        help="Comma-separated cargo feature list to pass to cargo build",
+    )
 
     subparsers.add_parser("bindings", help="generate uniffi bindings")
 
@@ -294,7 +299,7 @@ def create_cli_parser() -> Any:
         help="Output library stubs to debug dist location",
     )
 
-    return parser
+    return (subparsers, parser)
 
 
 def parse_cli():
