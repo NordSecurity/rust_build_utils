@@ -136,10 +136,7 @@ GLOBAL_CONFIG: Dict[str, Any] = {
                 },
             },
         },
-        "env": {
-            "CARGO_PROFILE_RELEASE_SPLIT_DEBUGINFO": (["packed"], "set"),
-            "CARGO_PROFILE_RELEASE_STRIP": (["true"], "set"),
-        },
+        "env": {},
         "post_build": ["rust_build_utils.darwin_build_utils.assert_version"],
     },
     "ios": {
