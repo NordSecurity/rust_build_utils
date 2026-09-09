@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:trixie-slim
 
 ARG REVISION
 
@@ -16,21 +16,32 @@ ENV ANDROID_SDK_ROOT /root/android-sdk-linux/
 ENV WORKDIR /root
 WORKDIR ${WORKDIR}
 
-# Install Android SDK
-RUN apt-get update && apt-get install -y \
-        openjdk-17-jdk \
-        openjdk-11-jdk \
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y \
+        apt-transport-https \
         bash \
         curl \
         git \
+        gnupg \
         python3 \
         python3-requests \
         python3-pip \
         unzip \
         wget \
+    && . /etc/os-release \
+    && install -d -m 0755 /etc/apt/keyrings \
+    && wget -qO- https://packages.adoptium.net/artifactory/api/gpg/key/public \
+        | gpg --dearmor -o /etc/apt/keyrings/adoptium.gpg \
+    && printf 'Types: deb\nURIs: https://packages.adoptium.net/artifactory/deb\nSuites: %s\nComponents: main\nSigned-By: /etc/apt/keyrings/adoptium.gpg\n' \
+        "$VERSION_CODENAME" > /etc/apt/sources.list.d/adoptium.sources \
+    && apt-get update \
+    && apt-get install -y  \
+        temurin-17-jdk \
+        temurin-11-jdk \
     && rm -rf /var/lib/apt/lists/*
 
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
     
 RUN ARCH=$(uname -m) && \
     case $ARCH in \
