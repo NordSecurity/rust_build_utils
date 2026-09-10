@@ -20,7 +20,7 @@ jobs:
         debug: ['--debug', '']
     runs-on: ubuntu-22.04
     container:
-      image: ${{ inputs.target_os == 'linux' && 'ghcr.io/nordsecurity/build-linux-rust1.89.0:v8.0.0' || 'ghcr.io/nordsecurity/build-android-rust1.89.0:v7.2.2' }}
+      image: ${{ inputs.target_os == 'linux' && 'ghcr.io/nordsecurity/build-linux-rust1.89.0:v8.1.0' || 'ghcr.io/nordsecurity/build-android-rust1.89.0:v7.2.2' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
