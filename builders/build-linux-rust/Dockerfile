@@ -1,4 +1,4 @@
-FROM rust:1.89.0-bullseye
+FROM buildpack-deps:22.04
 
 ARG REVISION
 
@@ -13,6 +13,49 @@ COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen-cpp /bin
 
 ENV QDK_TAG=v2.3.14
+
+# Rust installation is based on https://github.com/rust-lang/docker-rust/blob/master/stable/trixie/Dockerfile
+# Builds equivalent of rust:RUST_VERSION-ubuntu22.04.
+# Ubuntu 22.04 is selected to support glibc 2.35 (debian 12 is 2.36).
+# It can be moved to separate base image but right now build-linux-rust is the only user of it.
+# Other crosscompilation platforms can use newer os.
+ENV RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH \
+    RUST_VERSION=1.89.0
+
+RUN set -eux; \
+    \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+        'amd64') \
+            rustArch='x86_64-unknown-linux-gnu'; \
+            rustupSha256='4acc9acc76d5079515b46346a485974457b5a79893cfb01112423c89aeb5aa10'; \
+            ;; \
+        'arm64'|'aarch64') \
+            rustArch='aarch64-unknown-linux-gnu'; \
+            rustupSha256='9732d6c5e2a098d3521fca8145d826ae0aaa067ef2385ead08e6feac88fa5792'; \
+            ;; \
+        *) \
+            echo >&2 "unsupported rustup architecture: $arch"; \
+            exit 1; \
+            ;; \
+    esac; \
+    \
+    url="https://static.rust-lang.org/rustup/archive/1.29.0/${rustArch}/rustup-init"; \
+    wget --progress=dot:giga "$url"; \
+    echo "${rustupSha256} *rustup-init" | sha256sum -c -; \
+    \
+    chmod +x rustup-init; \
+    ./rustup-init -y --no-modify-path --profile minimal --default-toolchain $RUST_VERSION --default-host ${rustArch}; \
+    rm rustup-init; \
+    chmod -R a+w $RUSTUP_HOME $CARGO_HOME; \
+    \
+    rustup --version; \
+    cargo --version; \
+    rustc --version;
+# end of rust installation
+
 
 # Multilib is not present in an arm64 debian but is used by libtelio
 RUN set -eux; \

@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim
+FROM debian:trixie-slim
 
 ARG REVISION
 
@@ -7,30 +7,41 @@ LABEL org.opencontainers.image.description="AAR packaging image"
 LABEL org.opencontainers.image.licenses=GPL-3.0
 LABEL org.opencontainers.image.revision=$REVISION
 
-ENV ANDROID_COMPILE_SDK 29
-ENV ANDROID_BUILD_TOOLS 29.0.2
-ENV ANDROID_SDK_TOOLS 10406996
+ENV ANDROID_COMPILE_SDK=29
+ENV ANDROID_BUILD_TOOLS=29.0.2
+ENV ANDROID_SDK_TOOLS=10406996
 
-ENV ANDROID_SDK_ROOT /root/android-sdk-linux/
+ENV ANDROID_SDK_ROOT=/root/android-sdk-linux/
 
-ENV WORKDIR /root
+ENV WORKDIR=/root
 WORKDIR ${WORKDIR}
 
-# Install Android SDK
-RUN apt-get update && apt-get install -y \
-        openjdk-17-jdk \
-        openjdk-11-jdk \
+RUN export DEBIAN_FRONTEND=noninteractive \
+    && apt-get update \
+    && apt-get install -y \
+        apt-transport-https \
         bash \
         curl \
         git \
+        gnupg \
         python3 \
         python3-requests \
         python3-pip \
         unzip \
         wget \
+    && . /etc/os-release \
+    && install -d -m 0755 /etc/apt/keyrings \
+    && wget -qO- https://packages.adoptium.net/artifactory/api/gpg/key/public \
+        | gpg --dearmor -o /etc/apt/keyrings/adoptium.gpg \
+    && printf 'Types: deb\nURIs: https://packages.adoptium.net/artifactory/deb\nSuites: %s\nComponents: main\nSigned-By: /etc/apt/keyrings/adoptium.gpg\n' \
+        "$VERSION_CODENAME" > /etc/apt/sources.list.d/adoptium.sources \
+    && apt-get update \
+    && apt-get install -y  \
+        temurin-17-jdk \
+        temurin-11-jdk \
     && rm -rf /var/lib/apt/lists/*
 
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
     
 RUN ARCH=$(uname -m) && \
     case $ARCH in \
@@ -50,7 +61,7 @@ RUN ARCH=$(uname -m) && \
 
 ENV PATH="$PATH:/root/.local/bin"
 
-ENV ANDROID_SDK_CHECKSUM 8919e8752979db73d8321e9babe2caedcc393750817c1a5f56c128ec442fb540
+ENV ANDROID_SDK_CHECKSUM=8919e8752979db73d8321e9babe2caedcc393750817c1a5f56c128ec442fb540
 RUN wget --output-document=android-sdk.zip https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_TOOLS}_latest.zip && \
     echo "${ANDROID_SDK_CHECKSUM} android-sdk.zip" | sha256sum --check && \
     mkdir android-sdk-linux && \
@@ -68,8 +79,8 @@ ENV ANDROID_HOME=${WORKDIR}/android-sdk-linux
 ENV PATH=${PATH}:${ANDROID_HOME}/platform-tools
 
 # Install gradle
-ENV GRADLE_VERSION 9.0.0
-ENV GRADLE_CHECKSUM f759b8dd5204e2e3fa4ca3e73f452f087153cf81bac9561eeb854229cc2c5365
+ENV GRADLE_VERSION=9.0.0
+ENV GRADLE_CHECKSUM=f759b8dd5204e2e3fa4ca3e73f452f087153cf81bac9561eeb854229cc2c5365
 
 RUN wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-all.zip && \
     echo "${GRADLE_CHECKSUM} gradle-${GRADLE_VERSION}-all.zip" | sha256sum --check && \
@@ -77,6 +88,6 @@ RUN wget https://services.gradle.org/distributions/gradle-${GRADLE_VERSION}-all.
     rm gradle-${GRADLE_VERSION}-all.zip
 ENV PATH=${PATH}:${WORKDIR}/gradle-${GRADLE_VERSION}/bin
 
-ENTRYPOINT /bin/bash
+CMD ["/bin/bash"] 
 
-ENV WORKDIR ""
+ENV WORKDIR=""
