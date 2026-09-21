@@ -1,4 +1,4 @@
-FROM rust:1.89.0-bullseye
+FROM rust:1.89.0
 
 ARG REVISION
 
@@ -24,6 +24,10 @@ RUN set -eux; \
     else \
         apt-get install -y python3-pip; \
     fi; \
+    dpkg --add-architecture arm64; \
+    apt-get update; \
+    # for aarch64 musl headers, should not use glibc headers
+    apt-get install -y musl-dev:arm64; \
     rm -rf /var/lib/apt/lists/*
 
 # protoc
@@ -69,8 +73,8 @@ RUN rustup component add clippy rustfmt
 # Cargo linker config for cross-compilation
 COPY builders/build-openwrt-rust/cargo-config.toml ${CARGO_HOME}/config.toml
 
-# AWS LC includes for cross-compilation
-ENV AWS_LC_SYS_INCLUDES_aarch64_unknown_linux_musl="/usr/aarch64-linux-gnu/include"
-ENV AWS_LC_SYS_INCLUDES_armv7_unknown_linux_musleabihf="/opt/arm-linux-musleabihf-cross/arm-linux-musleabihf/include"
+# musl include for cross-compilation (needed for AWS_LC)
+# rustup doesn't bundle musl includes and includes are picked from linker aarch64-linux-gnu-gcc
+ENV CFLAGS_aarch64_unknown_linux_musl="-isystem /usr/include/aarch64-linux-musl"
 
 ENV BYPASS_LLT_SECRETS=1
