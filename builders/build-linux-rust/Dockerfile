@@ -22,7 +22,7 @@ ENV QDK_TAG=v2.3.14
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=1.89.0
+    RUST_VERSION=1.98.1
 
 RUN set -eux; \
     \
