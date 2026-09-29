@@ -16,7 +16,7 @@ PackageList = Dict[str, Dict[str, str]]
 LIPO_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 XCFRAMEWORK_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 
-RUST_NIGHTLY_VERSION = "2025-06-20"  # 1.89.0 was branched on this day, see top of https://releases.rs/docs/1.89.0/
+RUST_NIGHTLY_VERSION = "2026-07-16"  # 1.98.0 was branched on 2026-07-03 - this is closest main with miscompilation fix from .1, see https://releases.rs/docs/1.98.1/
 
 
 @dataclass
@@ -38,6 +38,14 @@ class CargoConfig:
 
     def is_msvc(self):
         return self.rust_target.endswith("-msvc")
+
+    def is_rust_tier3_target(self):
+        # aarch64 tvos is Tier 2 since 1.95, x86_64 tvos will stay Tier 3
+        return (
+            ("tvos" in self.target_os and self.arch == "x86_64")
+            or self.rust_target == "mipsel-unknown-linux-musl"
+            or self.rust_target == "mips-unknown-linux-musl"
+        )
 
 
 @dataclass
@@ -302,13 +310,12 @@ def parse_cli():
 
 
 def _build_packages(
-    config, packages: List[str], extra_args: Optional[List[str]], subcommand: str
+    config: CargoConfig,
+    packages: List[str],
+    extra_args: Optional[List[str]],
+    subcommand: str,
 ) -> None:
-    if (
-        "tvos" in config.target_os
-        or config.rust_target == "mipsel-unknown-linux-musl"
-        or config.rust_target == "mips-unknown-linux-musl"
-    ):
+    if config.is_rust_tier3_target():
         args = [
             "cargo",
             f"+nightly-{RUST_NIGHTLY_VERSION}",
@@ -402,11 +409,7 @@ def _cargo(
         shutil.rmtree(distribution_dir)
     os.makedirs(distribution_dir)
 
-    if (
-        "tvos" in config.target_os
-        or config.rust_target == "mipsel-unknown-linux-musl"
-        or config.rust_target == "mips-unknown-linux-musl"
-    ):
+    if config.is_rust_tier3_target():
         run_command(
             ["rustup", "toolchain", "install", f"nightly-{RUST_NIGHTLY_VERSION}"]
         )
