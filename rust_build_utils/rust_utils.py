@@ -6,12 +6,19 @@ import shutil
 import importlib
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
+from enum import Enum, auto
 from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 from pathlib import Path
 from rust_build_utils.msvc import activate_msvc, deactivate_msvc, is_msvc_active
 
 
 PackageList = Dict[str, Dict[str, str]]
+
+
+class DistDir(Enum):
+    CLEAN = auto()
+    KEEP = auto()
+
 
 LIPO_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 XCFRAMEWORK_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
@@ -362,7 +369,7 @@ def cargo_rustc(
     """
     Calls `cargo rustc` with the given package, passing extra_args to it.
     """
-    _cargo("rustc", project, config, packages, extra_args)
+    _cargo("rustc", project, config, packages, extra_args, DistDir.CLEAN)
 
 
 def cargo_build(
@@ -370,11 +377,12 @@ def cargo_build(
     config,
     packages: PackageList,
     extra_args: Optional[List[str]] = None,
+    dist_dir: DistDir = DistDir.CLEAN,
 ) -> None:
     """
     Calls `cargo build` with given packages, passing extra_args to it.
     """
-    _cargo("build", project, config, packages, extra_args)
+    _cargo("build", project, config, packages, extra_args, dist_dir)
 
 
 def _cargo(
@@ -383,6 +391,7 @@ def _cargo(
     config,
     packages: PackageList,
     extra_args: Optional[List[str]],
+    dist_dir: DistDir,
 ) -> None:
     if not packages:
         raise ValueError("No packages specified")
@@ -398,9 +407,9 @@ def _cargo(
         config.target_os, arch, "", config.debug
     )
 
-    if os.path.isdir(distribution_dir):
+    if dist_dir == DistDir.CLEAN and os.path.isdir(distribution_dir):
         shutil.rmtree(distribution_dir)
-    os.makedirs(distribution_dir)
+    os.makedirs(distribution_dir, exist_ok=True)
 
     if (
         "tvos" in config.target_os
