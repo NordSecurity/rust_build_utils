@@ -5,7 +5,7 @@ import os
 import shutil
 import importlib
 from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 from pathlib import Path
@@ -15,9 +15,9 @@ from rust_build_utils.msvc import activate_msvc, deactivate_msvc, is_msvc_active
 PackageList = Dict[str, Dict[str, str]]
 
 
-class DistDir(Enum):
-    CLEAN = auto()
-    KEEP = auto()
+class BuildOrder(Enum):
+    PARALLEL = auto()
+    ONE_AT_A_TIME = auto()
 
 
 LIPO_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
@@ -52,6 +52,7 @@ class Project:
     rust_version: str
     root_dir: str
     working_dir: Optional[str]
+    cargo_target_dir: Optional[str] = None
 
     def __post_init__(self):
         # TODO: `working_dir` is used by libtelio and it should probably be an
@@ -70,6 +71,8 @@ class Project:
         return build_dir
 
     def get_cargo_target_dir(self) -> str:
+        if self.cargo_target_dir:
+            return os.path.normpath(self.cargo_target_dir)
         if self.working_dir:
             return os.path.normpath(self.working_dir + "/target/")
         else:
@@ -106,6 +109,19 @@ class Project:
 
     def get_darwin_distribution_dir(self) -> str:
         return f"{self.get_distribution_dir()}/darwin"
+
+
+@dataclass
+class CargoBuild:
+    project: Project
+    packages: PackageList
+    env: Dict[str, str] = field(default_factory=dict)
+
+    def process_env(self) -> Dict[str, str]:
+        env = {**os.environ, **self.env}
+        if self.project.cargo_target_dir:
+            env["CARGO_TARGET_DIR"] = self.project.get_cargo_target_dir()
+        return env
 
 
 def concatenate_env_variable(env_var: str, value_array):
@@ -308,9 +324,9 @@ def parse_cli():
     return create_cli_parser().parse_args()
 
 
-def _build_packages(
+def _cargo_command(
     config, packages: List[str], extra_args: Optional[List[str]], subcommand: str
-) -> None:
+) -> List[str]:
     if (
         "tvos" in config.target_os
         or config.rust_target == "mipsel-unknown-linux-musl"
@@ -343,7 +359,30 @@ def _build_packages(
         args.append(p)
     args.extend(extra_args or [])
 
-    run_command(args)
+    return args
+
+
+def _run_commands(
+    commands: List[Tuple[List[str], Dict[str, str]]], order: BuildOrder
+) -> None:
+    if order == BuildOrder.ONE_AT_A_TIME:
+        for command in commands:
+            _run_commands_in_parallel([command])
+        return
+    _run_commands_in_parallel(commands)
+
+
+def _run_commands_in_parallel(
+    commands: List[Tuple[List[str], Dict[str, str]]],
+) -> None:
+    processes = []
+    for command, env in commands:
+        print("|EXECUTE| {}".format(" ".join(command)))
+        processes.append(subprocess.Popen(command, env=env))
+    return_codes = [process.wait() for process in processes]
+    for process, return_code in zip(processes, return_codes):
+        if return_code != 0:
+            raise subprocess.CalledProcessError(return_code, process.args)
 
 
 def build(
@@ -369,7 +408,13 @@ def cargo_rustc(
     """
     Calls `cargo rustc` with the given package, passing extra_args to it.
     """
-    _cargo("rustc", project, config, packages, extra_args, DistDir.CLEAN)
+    _cargo(
+        "rustc",
+        config,
+        [CargoBuild(project, packages)],
+        extra_args,
+        BuildOrder.PARALLEL,
+    )
 
 
 def cargo_build(
@@ -377,25 +422,43 @@ def cargo_build(
     config,
     packages: PackageList,
     extra_args: Optional[List[str]] = None,
-    dist_dir: DistDir = DistDir.CLEAN,
 ) -> None:
     """
     Calls `cargo build` with given packages, passing extra_args to it.
     """
-    _cargo("build", project, config, packages, extra_args, dist_dir)
+    _cargo(
+        "build",
+        config,
+        [CargoBuild(project, packages)],
+        extra_args,
+        BuildOrder.PARALLEL,
+    )
+
+
+def cargo_build_many(
+    config,
+    builds: List[CargoBuild],
+    extra_args: Optional[List[str]] = None,
+    order: BuildOrder = BuildOrder.PARALLEL,
+) -> None:
+    """
+    Calls `cargo build` once per entry in builds, passing extra_args to each,
+    and puts all binaries into the same distribution directory.
+    """
+    _cargo("build", config, builds, extra_args, order)
 
 
 def _cargo(
     subcommand: str,
-    project: Project,
     config,
-    packages: PackageList,
+    builds: List[CargoBuild],
     extra_args: Optional[List[str]],
-    dist_dir: DistDir,
+    order: BuildOrder,
 ) -> None:
-    if not packages:
+    if not builds or not all(build.packages for build in builds):
         raise ValueError("No packages specified")
 
+    project = builds[0].project
     arch = (
         config.arch
         if config.target_os != "android"
@@ -407,9 +470,9 @@ def _cargo(
         config.target_os, arch, "", config.debug
     )
 
-    if dist_dir == DistDir.CLEAN and os.path.isdir(distribution_dir):
+    if os.path.isdir(distribution_dir):
         shutil.rmtree(distribution_dir)
-    os.makedirs(distribution_dir, exist_ok=True)
+    os.makedirs(distribution_dir)
 
     if (
         "tvos" in config.target_os
@@ -439,12 +502,29 @@ def _cargo(
         # For msvc based toolchains msvc development environment needs activation
         msvc_context = activate_msvc(arch)
 
-    _build_packages(config, list(packages.keys()), extra_args, subcommand)
+    _run_commands(
+        [
+            (
+                _cargo_command(config, list(build.packages), extra_args, subcommand),
+                build.process_env(),
+            )
+            for build in builds
+        ],
+        order,
+    )
 
+    for build in builds:
+        _copy_to_distribution_dir(build, config, distribution_dir)
+
+    if msvc_context is not None:
+        deactivate_msvc(msvc_context)
+
+
+def _copy_to_distribution_dir(build: CargoBuild, config, distribution_dir: str) -> None:
     any_changed = False
-    for _, bins in packages.items():
+    for _, bins in build.packages.items():
         for _, bin in bins.items():
-            cargo_bin_path = project.get_cargo_path(
+            cargo_bin_path = build.project.get_cargo_path(
                 config.rust_target, bin, config.debug
             )
             cksum = compute_sha256(cargo_bin_path)
@@ -464,13 +544,10 @@ def _cargo(
             # copies executable permissions
             shutil.copy2(cargo_bin_path, distribution_dir)
 
-    if any_changed:
-        post_build(project, config, packages)
-    else:
+    if not any_changed:
         print("Skipping post build steps since none of the built binaries have changed")
-
-    if msvc_context is not None:
-        deactivate_msvc(msvc_context)
+        return
+    post_build(build.project, config, build.packages)
 
 
 def compute_sha256(file_path):
