@@ -5,7 +5,7 @@ import os
 import shutil
 import importlib
 from typing import Any, Dict, List, Optional, Tuple
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum, auto
 from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
 from pathlib import Path
@@ -60,7 +60,7 @@ class Project:
     rust_version: str
     root_dir: str
     working_dir: Optional[str]
-    cargo_target_dir: Optional[str] = None
+    release_profile: str = "release"
 
     def __post_init__(self):
         # TODO: `working_dir` is used by libtelio and it should probably be an
@@ -79,8 +79,6 @@ class Project:
         return build_dir
 
     def get_cargo_target_dir(self) -> str:
-        if self.cargo_target_dir:
-            return os.path.normpath(self.cargo_target_dir)
         if self.working_dir:
             return os.path.normpath(self.working_dir + "/target/")
         else:
@@ -96,7 +94,7 @@ class Project:
         cargo_dir = self.get_cargo_target_dir()
         if debug:
             return os.path.normpath(f"{cargo_dir}/{target}/debug/{path}")
-        return os.path.normpath(f"{cargo_dir}/{target}/release/{path}")
+        return os.path.normpath(f"{cargo_dir}/{target}/{self.release_profile}/{path}")
 
     def get_distribution_path(
         self, target_os: str, architecture: str, path: str, debug: bool
@@ -123,13 +121,6 @@ class Project:
 class CargoBuild:
     project: Project
     packages: PackageList
-    env: Dict[str, str] = field(default_factory=dict)
-
-    def process_env(self) -> Dict[str, str]:
-        env = {**os.environ, **self.env}
-        if self.project.cargo_target_dir:
-            env["CARGO_TARGET_DIR"] = self.project.get_cargo_target_dir()
-        return env
 
 
 def concatenate_env_variable(env_var: str, value_array):
@@ -333,6 +324,7 @@ def parse_cli():
 
 
 def _cargo_command(
+    project: Project,
     config: CargoConfig,
     packages: List[str],
     extra_args: Optional[List[str]],
@@ -359,7 +351,7 @@ def _cargo_command(
         ]
 
     if not config.debug:
-        args.append("--release")
+        args.extend(["--profile", project.release_profile])
 
     for p in packages:
         args.append("--package")
@@ -369,9 +361,7 @@ def _cargo_command(
     return args
 
 
-def _run_commands(
-    commands: List[Tuple[List[str], Dict[str, str]]], order: BuildOrder
-) -> None:
+def _run_commands(commands: List[List[str]], order: BuildOrder) -> None:
     if order == BuildOrder.ONE_AT_A_TIME:
         for command in commands:
             _run_commands_in_parallel([command])
@@ -379,13 +369,11 @@ def _run_commands(
     _run_commands_in_parallel(commands)
 
 
-def _run_commands_in_parallel(
-    commands: List[Tuple[List[str], Dict[str, str]]],
-) -> None:
+def _run_commands_in_parallel(commands: List[List[str]]) -> None:
     processes = []
-    for command, env in commands:
+    for command in commands:
         print("|EXECUTE| {}".format(" ".join(command)))
-        processes.append(subprocess.Popen(command, env=env))
+        processes.append(subprocess.Popen(command))
     return_codes = [process.wait() for process in processes]
     for process, return_code in zip(processes, return_codes):
         if return_code != 0:
@@ -507,9 +495,8 @@ def _cargo(
 
     _run_commands(
         [
-            (
-                _cargo_command(config, list(build.packages), extra_args, subcommand),
-                build.process_env(),
+            _cargo_command(
+                build.project, config, list(build.packages), extra_args, subcommand
             )
             for build in builds
         ],
