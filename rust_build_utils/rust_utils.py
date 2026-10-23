@@ -7,7 +7,11 @@ import shutil
 import importlib
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
-from rust_build_utils.rust_utils_config import GLOBAL_CONFIG, NDK_IMAGE_PATH, NDK_VERSION
+from rust_build_utils.rust_utils_config import (
+    GLOBAL_CONFIG,
+    NDK_IMAGE_PATH,
+    NDK_VERSION,
+)
 from pathlib import Path
 from rust_build_utils.msvc import activate_msvc, deactivate_msvc, is_msvc_active
 
