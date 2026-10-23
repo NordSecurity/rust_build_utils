@@ -1,4 +1,5 @@
 import argparse
+import glob
 import hashlib
 import subprocess
 import os
@@ -6,7 +7,7 @@ import shutil
 import importlib
 from typing import Any, Dict, List, Optional, Tuple
 from dataclasses import dataclass
-from rust_build_utils.rust_utils_config import GLOBAL_CONFIG
+from rust_build_utils.rust_utils_config import GLOBAL_CONFIG, NDK_IMAGE_PATH, NDK_VERSION
 from pathlib import Path
 from rust_build_utils.msvc import activate_msvc, deactivate_msvc, is_msvc_active
 
@@ -46,6 +47,10 @@ class CargoConfig:
             or self.rust_target == "mipsel-unknown-linux-musl"
             or self.rust_target == "mips-unknown-linux-musl"
         )
+
+    def uses_build_std(self):
+        # Android rebuilds std for emutls
+        return self.is_rust_tier3_target() or self.target_os == "android"
 
 
 @dataclass
@@ -315,7 +320,7 @@ def _build_packages(
     extra_args: Optional[List[str]],
     subcommand: str,
 ) -> None:
-    if config.is_rust_tier3_target():
+    if config.uses_build_std():
         args = [
             "cargo",
             f"+nightly-{RUST_NIGHTLY_VERSION}",
@@ -334,6 +339,21 @@ def _build_packages(
             "--target",
             config.rust_target,
         ]
+
+    if config.target_os == "android":
+        # Emutls: one pthread TLS key per library instead of one per thread_local!.
+        arch = config.rust_target.split("-")[0].replace("armv7", "arm")
+        # libclang_rt.builtins provides __emutls_get_address.
+        builtins = glob.glob(
+            f"{NDK_IMAGE_PATH}/android-ndk-{NDK_VERSION}/toolchains/llvm/prebuilt/*"
+            f"/lib/clang/*/lib/linux/libclang_rt.builtins-{arch}-android.a"
+        )
+        if len(builtins) != 1:
+            raise RuntimeError(f"Expected one libclang_rt.builtins, found {builtins}")
+        os.environ["RUSTFLAGS"] = (
+            f"{os.environ.get('RUSTFLAGS', '')} "
+            f"-Zhas-thread-local=yes -Ztls-model=emulated -Clink-arg={builtins[0]}"
+        )
 
     if not config.debug:
         args.append("--release")
@@ -409,7 +429,7 @@ def _cargo(
         shutil.rmtree(distribution_dir)
     os.makedirs(distribution_dir)
 
-    if config.is_rust_tier3_target():
+    if config.uses_build_std():
         run_command(
             ["rustup", "toolchain", "install", f"nightly-{RUST_NIGHTLY_VERSION}"]
         )
