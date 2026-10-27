@@ -21,7 +21,7 @@ PackageList = Dict[str, Dict[str, str]]
 LIPO_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 XCFRAMEWORK_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 
-RUST_NIGHTLY_VERSION = "2026-07-16"  # 1.98.0 was branched on 2026-07-03 - this is closest main with miscompilation fix from .1, see https://releases.rs/docs/1.98.1/
+RUST_NIGHTLY_VERSION = "2026-10-11"  # 1.99.0 was branched on 2026-08-14 - this is closest main with all fixes from .1, see https://releases.rs/docs/1.99.1/
 
 
 @dataclass
