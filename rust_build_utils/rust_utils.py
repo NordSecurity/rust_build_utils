@@ -474,10 +474,11 @@ def _cargo(
             f"Keeping {distribution_dir} and skipping post build steps since none of the built binaries have changed"
         )
     else:
-        if os.path.isdir(distribution_dir):
-            shutil.rmtree(distribution_dir)
-        os.makedirs(distribution_dir)
+        # Only remove artifacts of the packages being built, other cargo_build
+        # calls may share the same distribution_dir
+        os.makedirs(distribution_dir, exist_ok=True)
         for cargo_bin_path in cargo_checksums:
+            _remove_distribution_artifacts(cargo_bin_path, distribution_dir)
             # copies executable permissions
             shutil.copy2(cargo_bin_path, distribution_dir)
 
@@ -501,6 +502,15 @@ def _checksum_path(cargo_bin_path: str) -> Path:
 
 def _distribution_bin_path(cargo_bin_path: str, distribution_dir: str) -> Path:
     return Path(distribution_dir) / Path(cargo_bin_path).name
+
+
+def _remove_distribution_artifacts(cargo_bin_path: str, distribution_dir: str) -> None:
+    dist_bin_path = _distribution_bin_path(cargo_bin_path, distribution_dir)
+    for path in (dist_bin_path, Path(f"{dist_bin_path}.debug")):
+        if path.is_file():
+            # debug symbols are made read-only by strip
+            path.chmod(0o644)
+            path.unlink()
 
 
 def _is_distribution_up_to_date(
