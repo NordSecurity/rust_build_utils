@@ -18,7 +18,7 @@ import rust_build_utils.android_build_utils as abu
 
 
 PROJECT_CONFIG = rutils.Project(
-    rust_version="1.98.1",
+    rust_version="1.99.1",
     root_dir=PROJECT_ROOT,
     working_dir=None,
 )
