@@ -18,6 +18,9 @@ from rust_build_utils.msvc import activate_msvc, deactivate_msvc, is_msvc_active
 
 PackageList = Dict[str, Dict[str, str]]
 
+CHECKSUM_SUFFIX = ".sha256"
+CHECKSUM_SEPARATOR = " "
+
 LIPO_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 XCFRAMEWORK_TARGET_OSES = ["macos", "ios", "ios-sim", "tvos", "tvos-sim"]
 
@@ -429,10 +432,6 @@ def _cargo(
         config.target_os, arch, "", config.debug
     )
 
-    if os.path.isdir(distribution_dir):
-        shutil.rmtree(distribution_dir)
-    os.makedirs(distribution_dir)
-
     if config.uses_build_std():
         run_command(
             ["rustup", "toolchain", "install", f"nightly-{RUST_NIGHTLY_VERSION}"]
@@ -459,36 +458,74 @@ def _cargo(
 
     _build_packages(config, list(packages.keys()), extra_args, subcommand)
 
-    any_changed = False
+    cargo_checksums = {}
     for _, bins in packages.items():
         for _, bin in bins.items():
             cargo_bin_path = project.get_cargo_path(
                 config.rust_target, bin, config.debug
             )
-            cksum = compute_sha256(cargo_bin_path)
-            cksum_path = f"{cargo_bin_path}.sha256"
-            cksum_old = (
-                (path.read_text().strip() or None)
-                if (path := Path(cksum_path)).exists()
-                else None
-            )
-            if cksum_old != cksum:
-                print(
-                    f"{cargo_bin_path} has changed, new checksum: {cksum} vs old: {cksum_old}"
-                )
-                any_changed = True
-                with open(cksum_path, "w") as f:
-                    f.write(cksum)
+            cargo_checksums[cargo_bin_path] = compute_sha256(cargo_bin_path)
+
+    if all(
+        _is_distribution_up_to_date(cargo_bin_path, cksum, distribution_dir)
+        for cargo_bin_path, cksum in cargo_checksums.items()
+    ):
+        print(
+            f"Keeping {distribution_dir} and skipping post build steps since none of the built binaries have changed"
+        )
+    else:
+        if os.path.isdir(distribution_dir):
+            shutil.rmtree(distribution_dir)
+        os.makedirs(distribution_dir)
+        for cargo_bin_path in cargo_checksums:
             # copies executable permissions
             shutil.copy2(cargo_bin_path, distribution_dir)
 
-    if any_changed:
         post_build(project, config, packages)
-    else:
-        print("Skipping post build steps since none of the built binaries have changed")
+
+        for cargo_bin_path, cksum in cargo_checksums.items():
+            dist_cksum = compute_sha256(
+                _distribution_bin_path(cargo_bin_path, distribution_dir)
+            )
+            _checksum_path(cargo_bin_path).write_text(
+                f"{cksum}{CHECKSUM_SEPARATOR}{dist_cksum}"
+            )
 
     if msvc_context is not None:
         deactivate_msvc(msvc_context)
+
+
+def _checksum_path(cargo_bin_path: str) -> Path:
+    return Path(f"{cargo_bin_path}{CHECKSUM_SUFFIX}")
+
+
+def _distribution_bin_path(cargo_bin_path: str, distribution_dir: str) -> Path:
+    return Path(distribution_dir) / Path(cargo_bin_path).name
+
+
+def _is_distribution_up_to_date(
+    cargo_bin_path: str, cksum: str, distribution_dir: str
+) -> bool:
+    checksum_path = _checksum_path(cargo_bin_path)
+    if not checksum_path.is_file():
+        print(f"{cargo_bin_path} has no recorded checksum")
+        return False
+
+    old_cksum, _, old_dist_cksum = (
+        checksum_path.read_text().strip().partition(CHECKSUM_SEPARATOR)
+    )
+    if old_cksum != cksum:
+        print(
+            f"{cargo_bin_path} has changed, new checksum: {cksum} vs old: {old_cksum}"
+        )
+        return False
+
+    dist_bin_path = _distribution_bin_path(cargo_bin_path, distribution_dir)
+    if not dist_bin_path.is_file() or compute_sha256(dist_bin_path) != old_dist_cksum:
+        print(f"{dist_bin_path} is missing or was not made from {cargo_bin_path}")
+        return False
+
+    return True
 
 
 def compute_sha256(file_path):
