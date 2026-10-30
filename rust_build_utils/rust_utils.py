@@ -328,7 +328,7 @@ def _build_packages(
         args = [
             "cargo",
             f"+nightly-{RUST_NIGHTLY_VERSION}",
-            "build",
+            subcommand,
             "--verbose",
             "-Z",
             "build-std",
