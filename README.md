@@ -6,25 +6,32 @@ This is Nord Security's internal project. It contains utilities used for buildin
 ## Changelist
 See CHANGELOG.md for changes
 
-## Building docker images
+## Versioning
+The Python library and the docker images share one version. Bump it according to [semver](https://semver.org).
+A Rust toolchain bump is a minor change unless it breaks consumers.
+
+Builder images are tagged `<rust version>-v<version>`, e.g. `ghcr.io/nordsecurity/build-linux-rust:1.99.1-v9.0.0`.
+The Rust version is taken from `ARG RUST_VERSION` in the Dockerfile. Images without Rust are tagged `v<version>`.
+
+Images released before 9.0.0 have the Rust version in the image name, e.g. `build-linux-rust1.99.1:v8.3.0`.
+
+## Releasing
+Every PR changing `rust_build_utils/`, `builders/` or `aar_templates/` must add a new version
+on top of CHANGELOG.md. CI checks it, use the `skip-changelog` label to skip the check.
+
+1. Make your changes. To bump Rust, update `ARG RUST_VERSION` in the builder Dockerfiles.
+2. Add a new version with your changes on top of CHANGELOG.md:
+   ```markdown
+   ## 9.1.0
+   - Add something
+   ```
+3. Push the branch and test your changes with the `debug-{commit hash}` images.
+4. Merge the PR to `main`. All docker images are built and pushed, and the `v9.1.0` tag and GitHub Release are created.
+
+Do not create `v<version>` tags manually, a tagged version is considered released.
 
 ### Debug images
-With every push to the repository a new debug image is built and pushed to the GitHub Container Registry.
-This debug image is tagged: debug-{commit hash}.
-
-### Release images
-It is recommended to use GitHub UI to build release versions of docker images. This way there is
-a guarantee that the image is built from the versioned Dockerfile and does not contain
-any local changes. Additionally the image is labeled with the revision of the project during CI build
-so it is easy to trace back the source Dockerfile used to build the image.
-Please release images only from the `main` branch.
-
-To build a docker image on GitHub UI:
-1. Go to the [Actions](https://github.com/NordSecurity/rust_build_utils/actions) page of the project.
-2. Select the [Build and Push Docker Image](https://github.com/NordSecurity/rust_build_utils/actions/workflows/docker.yml) workflow on the left.
-3. Click the `Run workflow` button.
-4. Select `main` branch, set docker image name and tag and click the `Run workflow` button.
-5. For builder images you must also specify Rust version this images is based on before running the workflow. It is used for naming the image.
+With every push to a branch other than `main` debug images are built and tagged `debug-{commit hash}`.
 
 ## Contributions
 

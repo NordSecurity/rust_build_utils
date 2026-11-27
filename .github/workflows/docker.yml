@@ -1,43 +1,66 @@
 name: Build and Push Docker Image
 permissions: {}
-on:
-  push:
-    branches-ignore:
-      - main
-  workflow_dispatch:
-    inputs:
-      name:
-        type: choice
-        required: true
-        description: Docker image name
-        options:
-        - build-android-rust
-        - build-linux-rust
-        - build-openwrt-rust
-        - build-windows-rust
-        - package-aar-jdk-17
-        - test-nudler-nordvpn
-      version:
-        type: string
-        required: true
-        description: Output Docker image version
-      rust_version:
-        type: string
-        required: false
-        description: Version of Rust base image for builder images
+on: [push]
+
+concurrency:
+  group: docker-${{ github.ref }}
 
 env:
   REGISTRY: ghcr.io
 
 jobs:
+  version:
+    if: github.ref_type == 'branch'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      release: ${{ steps.version.outputs.release }}
+    steps:
+    - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      with:
+        fetch-depth: 0
+
+    # Release when the top version in CHANGELOG.md is not tagged yet
+    - id: version
+      run: |
+        VERSION=v$(grep -m 1 -oP '^## \K\d+\.\d+\.\d+$' CHANGELOG.md)
+        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        if [ "$GITHUB_REF_NAME" = main ] && ! git rev-parse -q --verify "refs/tags/$VERSION" > /dev/null; then
+          echo "release=true" >> "$GITHUB_OUTPUT"
+        fi
+
   build-docker-and-push:
-    if: github.event_name == 'workflow_dispatch' && github.ref_name == 'main'
+    needs: version
+    if: github.ref_name != 'main' || needs.version.outputs.release == 'true'
+    strategy:
+      matrix:
+        name:
+          - build-android-rust
+          - build-linux-rust
+          - build-openwrt-rust
+          - build-windows-rust
+          - package-aar-jdk-17
+          - test-nudler-nordvpn
     runs-on: ubuntu-22.04
     permissions:
       packages: write
       contents: read
     steps:
     - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+    - name: Get image tag
+      id: tag
+      run: |
+        RUST_VERSION=$(sed -n 's/^ARG RUST_VERSION=//p' builders/${{ matrix.name }}/Dockerfile)
+        RELEASE_TAG=${RUST_VERSION:+$RUST_VERSION-}${{ needs.version.outputs.version }}
+        echo "Release tag: $RELEASE_TAG"
+        if [ "${{ needs.version.outputs.release }}" = true ]; then
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+        else
+          echo "tag=debug-$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+        fi
 
     - uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
       with:
@@ -58,59 +81,31 @@ jobs:
       uses: docker/build-push-action@0adf9959216b96bec444f325f1e493d4aa344497 # v6.14.0
       with:
         context: .
-        file: builders/${{ inputs.name }}/Dockerfile
-        builder: ${{ steps.buildx.outputs.name }}
-        platforms: |-
-          ${{ (github.event.inputs.name == 'build-linux-rust' || github.event.inputs.name == 'build-windows-rust' || github.event.inputs.name == 'build-openwrt-rust') && 'linux/amd64,linux/arm64' ||
-              'linux/amd64' }}
-        push: true
-        tags: ${{ env.REGISTRY }}/nordsecurity/${{ inputs.name }}${{ inputs.rust_version }}:${{ inputs.version }}
-        build-args: |
-          REVISION=${{ github.sha }}
-
-  build-docker-on-branch:
-    if: github.event_name == 'push'
-    strategy:
-      matrix:
-        name:
-          - build-android-rust
-          - build-linux-rust
-          - build-openwrt-rust
-          - build-windows-rust
-          - package-aar-jdk-17
-          - test-nudler-nordvpn
-    runs-on: ubuntu-22.04
-    permissions:
-      packages: write
-      contents: read
-    steps:
-    - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
-
-    - uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3.0.0
-      with:
-        registry: ${{ env.REGISTRY }}
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # v3
-      with:
-        image: tonistiigi/binfmt:qemu-v7.0.0-28 # See: https://github.com/docker/setup-qemu-action/issues/198#issuecomment-2653791775
-
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@d70bba72b1f3fd22344832f00baa16ece964efeb # v3.3.0
-
-    - name: Build and push Docker image
-      uses: docker/build-push-action@0565240e2d4ab88bba5387d719585280857ece09 # v5.0.0
-      with:
-        context: .
         file: builders/${{ matrix.name }}/Dockerfile
         builder: ${{ steps.buildx.outputs.name }}
         platforms: |-
           ${{ (matrix.name == 'build-linux-rust' || matrix.name == 'build-windows-rust' || matrix.name == 'build-openwrt-rust') && 'linux/amd64,linux/arm64' ||
               'linux/amd64' }}
         push: true
-        tags: ${{ env.REGISTRY }}/nordsecurity/${{ matrix.name }}:debug-${{ github.sha }}
+        tags: ${{ env.REGISTRY }}/nordsecurity/${{ matrix.name }}:${{ steps.tag.outputs.tag }}
         build-args: |
           REVISION=${{ github.sha }}
+          VERSION=${{ steps.tag.outputs.tag }}
+
+  # Tag is created after all images are pushed, so a failed release can be re-run
+  release:
+    needs: [version, build-docker-and-push]
+    if: needs.version.outputs.release == 'true'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+
+    - name: Create GitHub Release
+      env:
+        GH_TOKEN: ${{ github.token }}
+        VERSION: ${{ needs.version.outputs.version }}
+      run: |
+        awk -v h="## ${VERSION#v}" '$0 == h {f=1; next} /^## / {f=0} f' CHANGELOG.md > notes.md
+        gh release create "$VERSION" --target "$GITHUB_SHA" --notes-file notes.md

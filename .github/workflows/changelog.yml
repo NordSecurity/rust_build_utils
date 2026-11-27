@@ -1,0 +1,38 @@
+name: Changelog
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+permissions: {}
+
+jobs:
+  check-version:
+    if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+        with:
+          fetch-depth: 0
+      - name: Check that CHANGELOG.md has a new version
+        env:
+          BASE: origin/${{ github.base_ref }}
+        run: |
+          CHANGED=$(git diff --name-only "$BASE"...HEAD)
+          if ! grep -qE '^(rust_build_utils|builders|aar_templates)/' <<< "$CHANGED"; then
+            echo "No changes in rust_build_utils/, builders/ or aar_templates/, new version is not required"
+            exit 0
+          fi
+
+          git show "$BASE:CHANGELOG.md" > base_changelog.md
+          OLD=$(grep -m 1 -oP '^## \K\d+\.\d+\.\d+$' base_changelog.md)
+          NEW=$(grep -m 1 -oP '^## \K\d+\.\d+\.\d+$' CHANGELOG.md)
+          if [ "$NEW" = "$OLD" ] || [ "$(printf '%s\n' "$OLD" "$NEW" | sort -V | tail -n 1)" != "$NEW" ]; then
+            echo "::error::Add a new version (> $OLD) on top of CHANGELOG.md"
+            exit 1
+          fi
+          if ! sed -n "/^## $NEW\$/,/^## /p" CHANGELOG.md | grep -q '^- '; then
+            echo "::error::Version $NEW in CHANGELOG.md has no entries"
+            exit 1
+          fi
+          echo "New version: $OLD -> $NEW"
