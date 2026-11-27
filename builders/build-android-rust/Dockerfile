@@ -1,11 +1,14 @@
-FROM rust:1.99.1
+ARG RUST_VERSION=1.99.1
+FROM rust:${RUST_VERSION}
 
 ARG REVISION
+ARG VERSION
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/rust_build_utils
 LABEL org.opencontainers.image.description="Android Rust builder image"
 LABEL org.opencontainers.image.licenses=GPL-3.0
 LABEL org.opencontainers.image.revision=$REVISION
+LABEL org.opencontainers.image.version=$VERSION
 
 WORKDIR /source
 

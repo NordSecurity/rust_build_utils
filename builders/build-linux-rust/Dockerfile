@@ -1,11 +1,15 @@
+ARG RUST_VERSION=1.99.1
 FROM buildpack-deps:22.04
 
+ARG RUST_VERSION
 ARG REVISION
+ARG VERSION
 
 LABEL org.opencontainers.image.source=https://github.com/NordSecurity/rust_build_utils
 LABEL org.opencontainers.image.description="Linux Rust builder image"
 LABEL org.opencontainers.image.licenses=GPL-3.0
 LABEL org.opencontainers.image.revision=$REVISION
+LABEL org.opencontainers.image.version=$VERSION
 
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen /bin
 COPY --from=ghcr.io/nordsecurity/uniffi-generators:v0.28.3-4 /bin/uniffi-bindgen-cs /bin
@@ -22,7 +26,7 @@ ENV QDK_TAG=v2.3.14
 ENV RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
-    RUST_VERSION=1.99.1
+    RUST_VERSION=${RUST_VERSION}
 
 RUN set -eux; \
     \
