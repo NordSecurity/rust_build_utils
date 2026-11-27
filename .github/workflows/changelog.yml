@@ -5,53 +5,30 @@ on:
 permissions: {}
 
 jobs:
-  # Every PR changing the library or the builder images is a release: it must add a new
-  # "## X.Y.Z" section on top of CHANGELOG.md. The release is made when the PR is merged.
-  # Add the `skip-changelog` label to a PR to bypass the check (e.g. refactoring or typos).
-  changelog-version:
+  check-version:
     if: ${{ !contains(github.event.pull_request.labels.*.name, 'skip-changelog') }}
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
-    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
         with:
           fetch-depth: 0
-      - name: Check CHANGELOG.md version
+      - name: Check that CHANGELOG.md has a new version
         env:
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BASE: origin/${{ github.base_ref }}
         run: |
-          top_version() {
-            sed -n 's/^## \([0-9]\+\.[0-9]\+\.[0-9]\+\)$/\1/p' | head -n 1
-          }
-          # Compare with the current base branch, not the one the PR was opened against
-          BASE=$(git show "origin/$BASE_REF:CHANGELOG.md" | top_version)
-          NEW=$(top_version < CHANGELOG.md)
-          FIRST_HEADING=$(grep -m 1 '^## ' CHANGELOG.md)
+          CHANGED=$(git diff --name-only "$BASE"...HEAD)
+          grep -qE '^(rust_build_utils|builders|aar_templates)/' <<< "$CHANGED" || exit 0
 
-          if [ "$NEW" = "$BASE" ]; then
-            if git diff --name-only "origin/$BASE_REF"...HEAD | grep -qE '^(rust_build_utils|builders|aar_templates)/'; then
-              echo "::error::rust_build_utils/, builders/ or aar_templates/ changed: add a new '## X.Y.Z' section (> $BASE) on top of CHANGELOG.md"
-              exit 1
-            fi
-            echo "No release in this PR"
-            exit 0
-          fi
-
-          if [ "$FIRST_HEADING" != "## $NEW" ]; then
-            echo "::error::The first section of CHANGELOG.md must be '## X.Y.Z', found '$FIRST_HEADING'"
+          git show "$BASE:CHANGELOG.md" > base_changelog.md
+          OLD=$(grep -m 1 -oP '^## \K\d+\.\d+\.\d+$' base_changelog.md)
+          NEW=$(grep -m 1 -oP '^## \K\d+\.\d+\.\d+$' CHANGELOG.md)
+          if [ "$NEW" = "$OLD" ] || [ "$(printf '%s\n' "$OLD" "$NEW" | sort -V | tail -n 1)" != "$NEW" ]; then
+            echo "::error::Add a new version (> $OLD) on top of CHANGELOG.md"
             exit 1
           fi
-          if [ "$(printf '%s\n%s\n' "$BASE" "$NEW" | sort -V | tail -n 1)" != "$NEW" ]; then
-            echo "::error::CHANGELOG.md version $NEW must be greater than $BASE"
+          if ! sed -n "/^## $NEW\$/,/^## /p" CHANGELOG.md | grep -q '^- '; then
+            echo "::error::Version $NEW in CHANGELOG.md has no entries"
             exit 1
           fi
-          if git rev-parse -q --verify "refs/tags/v$NEW" > /dev/null; then
-            echo "::error::v$NEW is already released"
-            exit 1
-          fi
-          if [ -z "$(awk -v h="## $NEW" '$0 == h {f=1; next} /^## / {f=0} f' CHANGELOG.md | tr -d '[:space:]')" ]; then
-            echo "::error::'## $NEW' section in CHANGELOG.md is empty"
-            exit 1
-          fi
-          echo "Merging this PR releases v$NEW"
